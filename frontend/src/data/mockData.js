@@ -1,0 +1,145 @@
+export const mockDocuments = [
+  {
+    id: '1',
+    name: 'Non-Disclosure Agreement - TechCorp.pdf',
+    uploadDate: '2026-03-10',
+    riskLevel: 'low',
+    type: 'PDF',
+    size: '245 KB',
+    pages: 8,
+    summary: 'Standard NDA between two parties covering confidential information shared during the course of a business relationship. Both parties agree to protect proprietary information for a period of 3 years.',
+    clauses: [
+      { title: 'Confidentiality Obligation', detail: 'Both parties must keep all shared information strictly confidential for 3 years after agreement termination.' },
+      { title: 'Permitted Disclosures', detail: 'Information may be disclosed if legally required by court order or regulatory authority.' },
+      { title: 'Exclusions', detail: 'Publicly available information and independently developed knowledge are excluded from confidentiality obligations.' },
+      { title: 'Remedies', detail: 'Breach may result in injunctive relief and monetary damages without limitation.' },
+    ],
+    suggestedActions: [
+      'Review the 3-year confidentiality period — consider if this aligns with your business needs.',
+      'Ensure permitted disclosures cover all necessary regulatory requirements.',
+      'Confirm the remedies clause with your legal team before signing.',
+    ],
+  },
+  {
+    id: '2',
+    name: 'Employment Contract - Jane Smith.docx',
+    uploadDate: '2026-03-08',
+    riskLevel: 'medium',
+    type: 'DOCX',
+    size: '128 KB',
+    pages: 12,
+    summary: 'Employment agreement for a senior software engineer position. Includes non-compete and IP assignment clauses that require careful review. The non-compete clause spans 2 years post-employment.',
+    clauses: [
+      { title: 'Non-Compete Clause', detail: '2-year restriction from working for competitors within the same geographic region.' },
+      { title: 'IP Assignment', detail: 'All inventions created during employment are automatically assigned to the employer.' },
+      { title: 'At-Will Employment', detail: 'Either party may terminate employment at any time with or without cause.' },
+      { title: 'Severance Terms', detail: 'No severance is provided unless explicitly negotiated in a separate agreement.' },
+    ],
+    suggestedActions: [
+      'The non-compete clause is broad — consult a lawyer to assess enforceability in your jurisdiction.',
+      'Review the IP assignment clause carefully if you have side projects.',
+      'Negotiate severance terms before signing.',
+    ],
+  },
+  {
+    id: '3',
+    name: 'Lease Agreement - Office Space.pdf',
+    uploadDate: '2026-03-05',
+    riskLevel: 'high',
+    type: 'PDF',
+    size: '512 KB',
+    pages: 24,
+    summary: 'Commercial lease agreement for office space in downtown. High-risk due to stringent penalty clauses, early termination fees, and personal guarantee requirements.',
+    clauses: [
+      { title: 'Early Termination', detail: 'Terminating the lease early incurs a penalty equal to 6 months of rent.' },
+      { title: 'Personal Guarantee', detail: 'Tenant\'s principals must personally guarantee all lease obligations.' },
+      { title: 'Rent Escalation', detail: 'Rent increases automatically by 5% annually for the duration of the lease.' },
+      { title: 'Maintenance Obligations', detail: 'Tenant is responsible for all interior maintenance including HVAC systems.' },
+    ],
+    suggestedActions: [
+      'The personal guarantee is high-risk — attempt to negotiate removal or cap the guaranteed amount.',
+      'Early termination penalty is significant — ensure your business plan can support a long-term commitment.',
+      'Review HVAC maintenance responsibility carefully and budget accordingly.',
+    ],
+  },
+  {
+    id: '4',
+    name: 'Software License Agreement.txt',
+    uploadDate: '2026-03-01',
+    riskLevel: 'low',
+    type: 'TXT',
+    size: '89 KB',
+    pages: 6,
+    summary: 'Standard open-source software license agreement (MIT-based) with minimal restrictions. Allows for commercial use, modification, and distribution with attribution requirements.',
+    clauses: [
+      { title: 'License Grant', detail: 'Perpetual, non-exclusive license to use, modify, and distribute the software.' },
+      { title: 'Attribution', detail: 'Original copyright notice must be included in all copies or substantial portions.' },
+      { title: 'Warranty Disclaimer', detail: 'Software is provided "as is" without warranty of any kind.' },
+      { title: 'Limitation of Liability', detail: 'Licensor is not liable for any damages arising from use of the software.' },
+    ],
+    suggestedActions: [
+      'Ensure attribution requirements are included in your product documentation.',
+      'Understand the warranty disclaimer — no support or guarantees are provided.',
+    ],
+  },
+];
+
+export const mockChatHistory = [
+  {
+    id: 1,
+    role: 'assistant',
+    content: 'Hello! I\'ve analyzed your document. I\'m ready to answer any questions you have about it. Ask me about specific clauses, risk factors, or anything else you\'d like to understand.',
+    timestamp: '10:00 AM',
+  },
+  {
+    id: 2,
+    role: 'user',
+    content: 'What is the most risky clause in this document?',
+    timestamp: '10:01 AM',
+  },
+  {
+    id: 3,
+    role: 'assistant',
+    content: 'Based on my analysis, the **Non-Compete Clause** poses the highest risk. It restricts you from working for competitors for **2 years** post-employment, which is quite broad. Enforceability varies significantly by jurisdiction — in some states like California, non-competes are largely unenforceable, while in others they are strictly upheld. I recommend consulting with a local employment attorney before signing.',
+    timestamp: '10:01 AM',
+  },
+  {
+    id: 4,
+    role: 'user',
+    content: 'Can you explain the IP assignment clause in simple terms?',
+    timestamp: '10:03 AM',
+  },
+  {
+    id: 5,
+    role: 'assistant',
+    content: 'Of course! In plain language, the **IP Assignment clause** means:\n\n• Any idea, invention, or code you create **while employed** — even outside of work hours — belongs to your employer.\n• This includes side projects if they\'re related to the company\'s business.\n• You\'d need to disclose any personal projects you\'re currently working on before signing.\n\nTo protect yourself, consider negotiating an **IP carve-out** that excludes pre-existing personal projects.',
+    timestamp: '10:03 AM',
+  },
+];
+
+export const riskConfig = {
+  low: {
+    label: 'Low Risk',
+    color: 'text-green-600',
+    bg: 'bg-green-50',
+    border: 'border-green-200',
+    dot: 'bg-green-500',
+    badge: 'bg-green-100 text-green-700',
+  },
+  medium: {
+    label: 'Medium Risk',
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    dot: 'bg-amber-500',
+    badge: 'bg-amber-100 text-amber-700',
+  },
+  high: {
+    label: 'High Risk',
+    color: 'text-red-600',
+    bg: 'bg-red-50',
+    border: 'border-red-200',
+    dot: 'bg-red-500',
+    badge: 'bg-red-100 text-red-700',
+  },
+};
