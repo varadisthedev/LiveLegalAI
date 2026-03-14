@@ -11,6 +11,7 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 const documentRoutes = require('./routes/documentRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const voiceRoutes = require('./routes/voiceRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/document', documentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/api/user', userRoutes);
 
 // Base route
 app.get('/', (req, res) => {

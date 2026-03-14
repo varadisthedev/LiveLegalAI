@@ -27,10 +27,12 @@ const processVoiceChat = async (req, res, next) => {
     // 3. Save to Chat History
     await saveChatHistory({
       userId,
+      documentId: document_id,
       question,
       response: textAnswer,
       responseType: 'voice_rag',
-      voiceEnabled: true
+      voiceEnabled: true,
+      sourcesUsed: ragResult.sources_used || 0
     });
 
     // 4. Stream audio back to client
@@ -47,6 +49,35 @@ const processVoiceChat = async (req, res, next) => {
   }
 };
 
+/**
+ * Generic Text-to-Speech: Takes any text and converts it to audio via ElevenLabs.
+ * Useful for the AI site navigator.
+ */
+const processTextToSpeech = async (req, res, next) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json(formatResponse(false, null, 'text is required.'));
+    }
+
+    // Convert text to audio
+    const audioStream = await generateAudioStream(text);
+
+    // Stream audio back to client
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    logger.info(`Generic Voice TTS generated: ${text.substring(0, 30)}...`);
+
+    audioStream.pipe(res);
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
-  processVoiceChat
+  processVoiceChat,
+  processTextToSpeech
 };
