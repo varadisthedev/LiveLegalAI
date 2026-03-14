@@ -3,7 +3,8 @@ const fs = require('fs');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const logger = require('../utils/logger');
 
-const RAG_BASE_URL = process.env.RAG_SERVICE_URL || 'https://livelegalai-production.up.railway.app';
+const RAW_URL = process.env.RAG_SERVICE_URL;
+const RAG_BASE_URL = RAW_URL.endsWith('/') ? RAW_URL.slice(0, -1) : RAW_URL;
 
 /**
  * Proxy: Upload and ingest a document into the RAG microservice
