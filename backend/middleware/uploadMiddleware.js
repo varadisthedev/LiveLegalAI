@@ -21,16 +21,16 @@ const storage = multer.diskStorage({
 // Check File Type
 function checkFileType(file, cb) {
   // Allowed ext
-  const filetypes = /jpeg|jpg|png|pdf/;
+  const filetypes = /jpeg|jpg|png|pdf|docx/;
   // Check ext
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
   // Check mime
-  const mimetype = filetypes.test(file.mimetype);
+  const mimetype = filetypes.test(file.mimetype) || file.mimetype.includes('openxmlformats-officedocument.wordprocessingml.document');
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Error: Images or PDFs Only!'));
+    cb(new Error('Error: Images, PDFs, or DOCX Only!'));
   }
 }
 

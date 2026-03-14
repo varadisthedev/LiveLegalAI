@@ -1,12 +1,13 @@
 const { ingestDocument } = require('../services/ragProxyService');
-const { saveDocumentHistory, getDocumentHistoryByUser, getDocumentById } = require('../repositories/documentRepository');
-const { saveAnalytics } = require('../repositories/analyticsRepository');
+const Document = require('../models/Document'); // Using Mongoose Model directly here to simplify updates later
+const { getDocumentHistoryByUser, getDocumentById } = require('../repositories/documentRepository');
 const { formatResponse } = require('../utils/responseFormatter');
 const logger = require('../utils/logger');
 const fs = require('fs');
 
 /**
- * Upload a PDF/DOCX, ingest it into the RAG microservice, save a record to MongoDB
+ * Upload a PDF/DOCX, ingest it into the RAG microservice, save a record to MongoDB.
+ * Note: Full Analytics to Snowflake happens later when /analyze is called.
  */
 const uploadDocument = async (req, res, next) => {
   try {
@@ -20,32 +21,24 @@ const uploadDocument = async (req, res, next) => {
     // 1. Send file to external RAG FastAPI service for ingestion
     const ragResult = await ingestDocument(filePath, originalname);
 
-    // 2. Save document record in MongoDB (stores the RAG document_id for later chat/analyze calls)
-    const docRecord = {
+    // 2. Save base document record in MongoDB (will be updated after /analyze)
+    const docRecord = new Document({
       userId,
       fileUrl: filename,
       originalName: originalname,
-      documentId: ragResult.document_id,  // RAG microservice ID – essential for /analyze and /chat
+      documentId: ragResult.document_id,  // RAG microservice ID
       numChunks: ragResult.num_chunks,
-      documentType: 'Pending Analysis'   // Will be filled after /analyze is called
-    };
-
-    const savedDoc = await saveDocumentHistory(docRecord);
-
-    // 3. Fire Analytics to Snowflake (non-blocking best-effort)
-    saveAnalytics({
       documentType: 'Pending Analysis',
-      legalCategory: 'Unknown',
-      severityScore: 0,
-      riskLevel: 'Unknown',
-      userId
-    }).catch(err => logger.error(`Snowflake analytics write failed: ${err.message}`));
+      analyzed: false
+    });
+
+    const savedDoc = await docRecord.save();
 
     logger.info(`Document uploaded and ingested: ${ragResult.document_id} for user ${userId}`);
 
     return res.status(200).json(formatResponse(true, {
       id: savedDoc._id,
-      documentId: ragResult.document_id,   // <<< Client should store this for /chat and /analyze
+      documentId: ragResult.document_id,
       filename: originalname,
       numChunks: ragResult.num_chunks,
       message: ragResult.message
@@ -53,6 +46,13 @@ const uploadDocument = async (req, res, next) => {
 
   } catch (error) {
     next(error);
+  } finally {
+    // Attempt to clean up the local temp upload since RAG has processed it
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) logger.warn(`Could not delete temp file ${req.file.path}: ${err}`);
+      });
+    }
   }
 };
 
