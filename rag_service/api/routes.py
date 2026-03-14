@@ -205,3 +205,55 @@ async def chat_with_document(request: ChatRequest):
 async def health_check():
     """Simple health check endpoint for the Express.js backend to monitor."""
     return {"status": "ok", "service": "rag_service"}
+
+
+# ===========================================================================
+# GET /documents  —  List all ingested documents (for history sidebar)
+# ===========================================================================
+
+@router.get(
+    "/documents",
+    summary="List all ingested documents",
+    description=(
+        "Returns a list of all documents that have been ingested. "
+        "Includes analysis status, severity score, and summary preview."
+    ),
+    tags=["Documents"],
+)
+async def list_documents():
+    """
+    GET /documents
+
+    Returns:
+      { documents: [...], total: int }
+    """
+    from core.document_registry import get_all_documents
+    from models.response_models import DocumentListResponse, DocumentSummary
+
+    docs = get_all_documents()
+    doc_summaries = [DocumentSummary(**d) for d in docs]
+    return DocumentListResponse(documents=doc_summaries, total=len(doc_summaries))
+
+
+# ===========================================================================
+# GET /documents/{document_id}  —  Get single document info
+# ===========================================================================
+
+@router.get(
+    "/documents/{document_id}",
+    summary="Get a single document's metadata",
+    tags=["Documents"],
+)
+async def get_document_info(document_id: str):
+    """
+    GET /documents/{document_id}
+
+    Returns document metadata including analysis status.
+    """
+    from core.document_registry import get_document
+
+    doc = get_document(document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found.")
+    return doc
+

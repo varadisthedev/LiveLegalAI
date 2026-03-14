@@ -33,8 +33,9 @@ from core.chunker import split_into_chunks
 from core.embeddings import embed_texts
 from core.vector_store import save_index
 from core.retriever import retrieve_top_chunks, format_context
-from core.severity_scoring import compute_severity_score
-from models.response_models import IngestResponse, AnalyzeResponse, ChatResponse
+from core.severity_scoring import compute_severity_score, detect_document_type
+from core.document_registry import register_document, mark_analyzed
+from models.response_models import IngestResponse, AnalyzeResponse, ChatResponse, RiskFactor
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -153,6 +154,9 @@ def run_ingest_pipeline(file_path: str, document_id: str, filename: str) -> Inge
     logger.info("Step 5/5 — Storing embeddings in FAISS vector store")
     save_index(document_id, embeddings, chunks)
 
+    # Step 6: Register in document registry (for /documents list endpoint)
+    register_document(document_id, filename, len(chunks))
+
     logger.info(f"===== INGEST PIPELINE COMPLETE | {len(chunks)} chunks stored =====")
 
     return IngestResponse(
@@ -192,12 +196,13 @@ def run_analyze_pipeline(document_id: str, query: str) -> AnalyzeResponse:
     chunks = retrieve_top_chunks(document_id, query)
     context = format_context(chunks)
 
-    # Step 2: Compute severity score
+    # Step 2: Compute severity score + risk factors + document type
     logger.info("Step 2/3 — Computing severity score")
     combined_text = "\n".join(chunks)
-    severity_score, triggered_rules = compute_severity_score(combined_text)
+    severity_score, triggered_rules, risk_factors_raw, risk_level = compute_severity_score(combined_text)
+    document_type = detect_document_type(combined_text)
     severity_explanation = (
-        f"Severity: {severity_score}/100. "
+        f"Severity: {severity_score}/100 ({risk_level}). "
         + (f"Risk factors detected: {', '.join(triggered_rules)}." if triggered_rules else "No major risk factors detected.")
     )
 
@@ -239,7 +244,13 @@ Additional context: {severity_explanation}
     # Parse the three sections from Gemini's structured response
     summary, explanation, suggested_reply = _parse_analyze_response(full_response)
 
-    logger.info(f"===== ANALYZE PIPELINE COMPLETE | severity_score={severity_score} =====")
+    # Build structured risk factors for frontend graph
+    risk_factors = [RiskFactor(**rf) for rf in risk_factors_raw]
+
+    logger.info(f"===== ANALYZE PIPELINE COMPLETE | severity_score={severity_score} ({risk_level}) | type={document_type} =====")
+
+    # Update document registry with analysis results
+    mark_analyzed(document_id, severity_score, risk_level, summary, document_type)
 
     return AnalyzeResponse(
         document_id=document_id,
@@ -247,6 +258,9 @@ Additional context: {severity_explanation}
         explanation=explanation,
         suggested_reply=suggested_reply,
         severity_score=severity_score,
+        risk_level=risk_level,
+        risk_factors=risk_factors,
+        document_type=document_type,
     )
 
 
@@ -342,6 +356,9 @@ Answer the question concisely and clearly. If the information is not present in 
     answer = _call_gemini(system_prompt, user_prompt, max_tokens=800)
     answer = answer.strip()
 
+    # Build context snippets so frontend can show "source references"
+    context_snippets = [chunk[:200] + ("..." if len(chunk) > 200 else "") for chunk in chunks]
+
     logger.info(f"Gemini answer generated — {len(answer)} characters")
     logger.info(f"===== CHAT PIPELINE COMPLETE =====")
 
@@ -350,4 +367,5 @@ Answer the question concisely and clearly. If the information is not present in 
         question=question,
         answer=answer,
         sources_used=len(chunks),
+        context_snippets=context_snippets,
     )
