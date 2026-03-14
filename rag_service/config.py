@@ -17,9 +17,8 @@ load_dotenv()
 # Google Gemini
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-# gemini-2.0-flash is fast and cheap — ideal for hackathons
-# Other options: gemini-1.5-pro, gemini-1.5-flash
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+# Note: Using gemini-2.5-flash (or gemini-2.0-flash-lite-preview-02-05) based on your API key
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 # ---------------------------------------------------------------------------
 # OpenAI (used for embeddings if USE_OPENAI_EMBEDDINGS=true)

@@ -43,9 +43,6 @@ logger = get_logger(__name__)
 # Initialise Gemini client once at module level (not per-request).
 # google-generativeai uses a global configure() call, then model instances.
 # ---------------------------------------------------------------------------
-if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY is not set — Gemini calls will fail!")
-
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Gemini model instance — reused across all requests
