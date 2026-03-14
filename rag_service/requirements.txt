@@ -38,7 +38,7 @@ openai==1.59.9
 # Vector Store
 # ---------------------------------------------------------------------------
 faiss-cpu==1.9.0.post1       # Local FAISS (CPU build — sufficient for hackathon)
-numpy==1.26.4                # Required by FAISS and embeddings
+numpy>=1.26.4                # Required by FAISS and embeddings
 
 # ---------------------------------------------------------------------------
 # LLM — Anthropic Claude
