@@ -90,10 +90,14 @@ app = create_app()
 # Run directly with: python main.py
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
+    # Railway passes the assigned port in the PORT environment variable.
+    # We default to 8000 for local development.
+    port = int(os.environ.get("PORT", "8000"))
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,          # Hot-reload on file changes (dev mode)
+        port=port,
+        reload=False,         # Turn off reload for production stability
         log_level="info",
     )
