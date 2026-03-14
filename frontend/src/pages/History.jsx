@@ -37,7 +37,7 @@ export default function History() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch('https://livelegal-backend.up.railway.app/api/document/history', {
+        const res = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/document/history', {
           headers: { 'x-user-id': user?.id || 'user_12345' }
         });
         const data = await res.json();

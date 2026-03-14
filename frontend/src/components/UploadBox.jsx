@@ -56,7 +56,7 @@ export default function UploadBox({ onUploadComplete }) {
       const formData = new FormData();
       formData.append('document', file); // API expects 'document' field name
 
-      const response = await fetch('https://livelegal-backend.up.railway.app/api/document/upload', {
+      const response = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/document/upload', {
         method: 'POST',
         headers: {
           'x-user-id': user?.id || 'user_12345'

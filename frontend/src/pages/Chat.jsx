@@ -33,7 +33,7 @@ const COLOR_MAP = {
   emerald: { card: 'bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
 };async function fetchAIResponse(documentId, question, formatValue, languageCode, sessionId, userId) {
   try {
-    const response = await fetch('https://livelegal-backend.up.railway.app/api/chat/chat', {
+    const response = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/chat/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export default function Chat() {
     const fetchDocDetails = async () => {
       if (!documentId) return;
       try {
-        const res = await fetch(`https://livelegal-backend.up.railway.app/api/document/history`, {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app"}/api/document/history`, {
            headers: { 'x-user-id': user?.id || 'user_12345' }
         });
         const data = await res.json();

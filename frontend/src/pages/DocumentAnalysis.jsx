@@ -18,7 +18,7 @@ export default function DocumentAnalysis() {
   useEffect(() => {
     const analyzeDoc = async () => {
       try {
-        const res = await fetch('https://livelegal-backend.up.railway.app/api/chat/analyze', {
+        const res = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/chat/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
