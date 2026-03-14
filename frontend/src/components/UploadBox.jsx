@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, FileText, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
 
 const ACCEPTED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
 const ACCEPTED_EXTS = ['.pdf', '.docx', '.txt'];
@@ -12,6 +13,7 @@ export default function UploadBox({ onUploadComplete }) {
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const inputRef = useRef();
+  const { user } = useUser();
 
   const validateFile = (f) => {
     if (!f) return 'No file selected.';
@@ -37,21 +39,49 @@ export default function UploadBox({ onUploadComplete }) {
     handleFile(dropped);
   };
 
-  const simulateUpload = () => {
+  const simulateUpload = async () => {
+    if (!file) return;
     setUploading(true);
     setProgress(0);
+    setError('');
+
+    // Simulate progress bar while uploading
     let p = 0;
-    const interval = setInterval(() => {
-      p += Math.random() * 18 + 5;
-      if (p >= 100) {
-        p = 100;
-        clearInterval(interval);
-        setUploaded(true);
-        setUploading(false);
-        if (onUploadComplete) onUploadComplete(file);
-      }
-      setProgress(Math.min(p, 100));
+    const progressInterval = setInterval(() => {
+      p += 10;
+      if (p <= 90) setProgress(p);
     }, 200);
+
+    try {
+      const formData = new FormData();
+      formData.append('document', file); // API expects 'document' field name
+
+      const response = await fetch('https://livelegal-backend.up.railway.app/api/document/upload', {
+        method: 'POST',
+        headers: {
+          'x-user-id': user?.id || 'user_12345'
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || result.message || 'Upload failed');
+      }
+
+      setUploaded(true);
+      if (onUploadComplete) onUploadComplete(result.data);
+    } catch (err) {
+      clearInterval(progressInterval);
+      setProgress(0);
+      setError(err.message || 'Failed to upload document');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeFile = () => {

@@ -1,7 +1,8 @@
 import { riskConfig } from '../data/mockData';
 
 export default function RiskIndicator({ level, showLabel = true, size = 'md' }) {
-  const config = riskConfig[level] || riskConfig.low;
+  const normalizedLevel = (level || '').toLowerCase();
+  const config = riskConfig[normalizedLevel] || riskConfig.low;
 
   const sizeClasses = {
     sm: { dot: 'w-2 h-2', text: 'text-xs', padding: 'px-2 py-0.5' },

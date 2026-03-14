@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, History, FileCheck, Settings, LogOut, MessageSquare, Folder, Plus, User, X } from 'lucide-react';
+import { LayoutDashboard, FileText, History, FileCheck, Settings, LogOut, MessageSquare, Folder, Plus, User, X, Volume2 } from 'lucide-react';
+import { UserButton, useUser } from '@clerk/clerk-react';
 
 const mainNavItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/documents', icon: FileText, label: 'Documents' },
-  { path: '/analysis', icon: FileCheck, label: 'Analysis' },
   { path: '/history', icon: History, label: 'History' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/settings',       icon: Settings,      label: 'Settings'       },
+  { path: '/voice-settings', icon: Volume2,        label: 'Voice Settings' },
 ];
 
 const chatNavItems = [
@@ -17,6 +17,7 @@ const chatNavItems = [
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const location = useLocation();
+  const { user } = useUser();
   const isChatMode = location.pathname.includes('/active-chat') || location.pathname.includes('/chat');
 
   const navItems = isChatMode ? chatNavItems : mainNavItems;
@@ -119,24 +120,24 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
         {/* Footer Area */}
         <div className="p-4 mt-auto border-t border-gray-200 dark:border-[#1F2937]">
-          {!isChatMode ? (
-            <Link to="/login" className="flex items-center gap-3 px-3 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors font-medium">
-              <LogOut size={16} /> Logout
-            </Link>
-          ) : (
-            <div className="flex items-center gap-3 px-2 py-2">
-              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-[#1F2937] flex items-center justify-center flex-shrink-0 text-blue-500 dark:text-blue-400">
-                 <User size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Alex Henderson</p>
-                <p className="text-xs text-gray-500 truncate">Senior Associate</p>
-              </div>
-              <button className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                 <Settings size={16} />
-              </button>
+          <div className="flex items-center gap-3 px-2 py-2 w-full">
+            <UserButton 
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700",
+                }
+              }}
+            />
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {user?.fullName || 'My Account'}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {user?.primaryEmailAddress?.emailAddress || 'Manage Profile'}
+              </p>
             </div>
-          )}
+          </div>
         </div>
       </aside>
     </>

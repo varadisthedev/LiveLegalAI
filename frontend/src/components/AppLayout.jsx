@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Menu, Moon, Sun } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import ChatWidget from './ChatWidget';
 
 export default function AppLayout({ children }) {
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage or system preference on mount
@@ -47,10 +50,11 @@ export default function AppLayout({ children }) {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto w-full">
+        <main className="flex-1 overflow-y-auto w-full relative">
           <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-8 h-full">
             {children}
           </div>
+          {location.pathname !== '/dashboard' && <ChatWidget />}
         </main>
       </div>
     </div>

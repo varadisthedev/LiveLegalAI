@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Upload, FileText, TrendingUp, Clock, Plus, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
+import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import RiskIndicator from '../components/RiskIndicator';
-import { mockDocuments } from '../data/mockData';
 
 const stats = [
   { label: 'Total Documents', value: '4', icon: FileText, color: 'blue', change: '+2 this month' },
@@ -25,12 +26,50 @@ const typeColors = {
 };
 
 export default function Dashboard() {
+  const { user } = useUser();
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('https://livelegal-backend.up.railway.app/api/document/history', {
+          headers: { 'x-user-id': user?.id || 'user_12345' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setDocuments(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard history:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user) {
+      fetchHistory();
+    }
+  }, [user]);
+
+  const highRiskCount = documents.filter(d => d.riskLevel === 'High').length || 0;
+  const analyzedToday = documents.filter(d => {
+    const today = new Date();
+    const docDate = new Date(d.createdAt);
+    return docDate.toDateString() === today.toDateString();
+  }).length || 0;
+
+  const dynamicStats = [
+    { label: 'Total Documents', value: documents.length.toString(), icon: FileText, color: 'blue', change: 'Total uploaded' },
+    { label: 'Analyzed Today', value: analyzedToday.toString(), icon: TrendingUp, color: 'green', change: 'Since midnight' },
+    { label: 'High Risk Docs', value: highRiskCount.toString(), icon: AlertTriangle, color: 'red', change: 'Needs attention' },
+    { label: 'Avg. Analysis Time', value: '18s', icon: Clock, color: 'purple', change: 'Lightning fast' },
+  ];
   return (
     <AppLayout title="Dashboard">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Good morning, Jane 👋</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome, {user?.firstName || 'User'} 👋</h1>
           <p className="text-sm text-gray-500 mt-1">Here's an overview of your legal documents.</p>
         </div>
         <Link
@@ -45,7 +84,7 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map(({ label, value, icon: Icon, color, change }) => {
+        {dynamicStats.map(({ label, value, icon: Icon, color, change }) => {
           const cls = colorMap[color];
           return (
             <div key={label} className={`bg-white border ${cls.border} rounded-2xl p-5 shadow-card hover:shadow-soft transition-all duration-200`}>
@@ -75,42 +114,47 @@ export default function Dashboard() {
         </div>
 
         <div className="divide-y divide-gray-50">
-          {mockDocuments.map((doc) => (
-            <div key={doc.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/70 transition-colors group">
-              {/* File icon */}
-              <div className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:border-blue-100 group-hover:bg-blue-50 transition-colors">
-                <FileText size={18} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{doc.name}</p>
-                  <span className={`hidden sm:inline-flex text-[11px] font-medium px-1.5 py-0.5 rounded border ${typeColors[doc.type]}`}>{doc.type}</span>
+          {loading ? (
+            <div className="py-8 text-center text-sm text-gray-500">Loading documents...</div>
+          ) : documents.map((doc) => {
+            const ext = doc.originalName?.split('.').pop().toUpperCase() || 'FILE';
+            return (
+              <div key={doc._id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/70 transition-colors group">
+                {/* File icon */}
+                <div className="w-10 h-10 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:border-blue-100 group-hover:bg-blue-50 transition-colors">
+                  <FileText size={18} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
                 </div>
-                <p className="text-xs text-gray-400">
-                  {new Date(doc.uploadDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {doc.size}
-                </p>
-              </div>
 
-              {/* Risk + Action */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <RiskIndicator level={doc.riskLevel} size="sm" />
-                <Link
-                  to={`/analysis/${doc.id}`}
-                  id={`dashboard-open-${doc.id}`}
-                  className="hidden sm:flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-all"
-                >
-                  Open Analysis
-                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                </Link>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{doc.originalName}</p>
+                    <span className={`hidden sm:inline-flex text-[11px] font-medium px-1.5 py-0.5 rounded border ${typeColors[ext] || typeColors.TXT}`}>{ext}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+
+                {/* Risk + Action */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <RiskIndicator level={doc.riskLevel || 'Unknown'} size="sm" />
+                  <Link
+                    to={`/analysis/${doc.documentId}`}
+                    id={`dashboard-open-${doc.documentId}`}
+                    className="hidden sm:flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-all"
+                  >
+                    Open Analysis
+                    <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empty state placeholder */}
-        {mockDocuments.length === 0 && (
+        {!loading && documents.length === 0 && (
           <div className="py-16 text-center">
             <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Upload size={24} className="text-gray-300" />

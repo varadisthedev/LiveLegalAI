@@ -15,10 +15,12 @@ export default function Upload() {
   const navigate = useNavigate();
   const [isUploaded, setIsUploaded] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [documentId, setDocumentId] = useState('');
 
-  const handleUploadComplete = (file) => {
+  const handleUploadComplete = (data) => {
     setIsUploaded(true);
-    setUploadedFileName(file.name);
+    setUploadedFileName(data.filename || 'Document');
+    setDocumentId(data.documentId);
   };
 
   return (
@@ -52,13 +54,13 @@ export default function Upload() {
                 </div>
                 <div className="flex w-full sm:w-auto gap-3">
                    <button 
-                    onClick={() => navigate('/analysis')}
+                    onClick={() => navigate(`/analysis/${documentId}`)}
                     className="flex-1 sm:flex-none justify-center items-center flex gap-2 bg-white text-blue-700 px-4 py-2.5 rounded-lg text-sm font-bold shadow hover:bg-gray-50 transition-colors"
                    >
                      <FileCheck size={16} /> View Analysis
                    </button>
                    <button 
-                    onClick={() => navigate('/active-chat')}
+                    onClick={() => navigate(`/active-chat/${documentId}`)}
                     className="flex-1 sm:flex-none justify-center items-center flex gap-2 bg-blue-500/20 border border-blue-400/30 text-white hover:bg-blue-500/40 px-4 py-2.5 rounded-lg text-sm font-bold shadow transition-colors"
                    >
                      <MessageSquare size={16} /> Ask AI

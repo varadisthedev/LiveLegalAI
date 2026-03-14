@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Scale, ArrowRight, Shield, Zap, FileSearch, MessageSquare, CheckCircle, ChevronRight } from 'lucide-react';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
 
 const features = [
   {
@@ -65,14 +66,24 @@ export default function Landing() {
             <span className="text-lg font-bold text-gray-900">LegalDoc <span className="text-blue-600">AI</span></span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/login" className="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors px-4 py-2">Sign In</Link>
-            <Link
-              to="/login"
-              className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-xl shadow-md"
-              id="landing-get-started-top"
-            >
-              Get Started
-            </Link>
+            <SignedOut>
+              <Link to="/login" className="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors px-4 py-2">Sign In</Link>
+              <Link
+                to="/signup"
+                className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-xl shadow-md"
+                id="landing-get-started-top"
+              >
+                Get Started
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                to="/dashboard"
+                className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-xl shadow-md"
+              >
+                Dashboard
+              </Link>
+            </SignedIn>
           </div>
         </div>
       </nav>
@@ -99,16 +110,29 @@ export default function Landing() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <SignedOut>
+              <Link
+                to="/signup"
+                id="landing-get-started-hero"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
+              >
+                Get Started Free
+                <ArrowRight size={18} />
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                to="/dashboard"
+                id="landing-get-started-hero"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
+              >
+                Go to Dashboard
+                <ArrowRight size={18} />
+              </Link>
+            </SignedIn>
+            
             <Link
               to="/login"
-              id="landing-get-started-hero"
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
-            >
-              Get Started Free
-              <ArrowRight size={18} />
-            </Link>
-            <Link
-              to="/dashboard"
               className="flex items-center gap-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-medium px-6 py-3.5 rounded-xl shadow-card hover:shadow-soft transition-all duration-200 text-base"
             >
               View Demo
@@ -244,14 +268,26 @@ export default function Landing() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Start understanding your legal documents today</h2>
           <p className="text-blue-100 text-lg mb-8">Join over 10,000 users who save time and money with LegalDoc AI.</p>
-          <Link
-            to="/login"
-            id="landing-cta-bottom"
-            className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
-          >
-            Get Started Free
-            <ArrowRight size={18} />
-          </Link>
+          <SignedOut>
+            <Link
+              to="/signup"
+              id="landing-cta-bottom"
+              className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
+            >
+              Get Started Free
+              <ArrowRight size={18} />
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <Link
+              to="/dashboard"
+              id="landing-cta-bottom"
+              className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
+            >
+              Go to Dashboard
+              <ArrowRight size={18} />
+            </Link>
+          </SignedIn>
         </div>
       </section>
 
