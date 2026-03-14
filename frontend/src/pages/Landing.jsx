@@ -1,311 +1,246 @@
+import React, { Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Scale, ArrowRight, Shield, Zap, FileSearch, MessageSquare, CheckCircle, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { Scale, Shield, FileSearch, MessageSquare, ArrowRight, Github } from 'lucide-react';
+import HeroLegalScanner3D from '../components/HeroLegalScanner3D';
 
 const features = [
   {
     icon: FileSearch,
-    title: 'Instant Analysis',
-    desc: 'Upload any legal document and receive a comprehensive analysis in seconds powered by advanced AI.',
+    title: 'AI Legal Explanation',
+    desc: 'Instantly summarize complex legal jargon into plain, understandable English.',
   },
   {
     icon: Shield,
-    title: 'Risk Detection',
-    desc: 'Automatically identify high-risk clauses, unfavorable terms, and potential legal liabilities.',
+    title: 'Risk Severity Analysis',
+    desc: 'Automatically flag high-risk clauses and potential legal liabilities before you sign.',
   },
   {
     icon: MessageSquare,
-    title: 'Chat with Docs',
-    desc: 'Ask plain-English questions about your documents and get clear, accurate answers instantly.',
-  },
-  {
-    icon: Zap,
-    title: 'Key Clause Extraction',
-    desc: 'Automatically highlight and summarize the most important clauses in any legal agreement.',
+    title: 'Suggested Legal Response',
+    desc: 'Generate ready-to-use replies and negotiation counter-offers instantly.',
   },
 ];
 
-const stats = [
-  { value: '50K+', label: 'Documents Analyzed' },
-  { value: '98%', label: 'Accuracy Rate' },
-  { value: '< 30s', label: 'Analysis Time' },
-  { value: '10K+', label: 'Happy Users' },
-];
+const RiskGauge = ({ value, label, color, delay }) => {
+  const dashArray = 283; // 2 * pi * r (r=45)
+  const dashOffset = dashArray - (dashArray * value) / 100;
 
-const testimonials = [
-  {
-    quote: "LegalDoc AI saved us hours reviewing vendor contracts. The risk flagging is incredibly accurate.",
-    name: "Sarah Chen",
-    role: "General Counsel, TechStartup Inc.",
-    initials: "SC",
-  },
-  {
-    quote: "Finally I can understand lease agreements without paying $500/hr for a lawyer. Game changer.",
-    name: "Michael Torres",
-    role: "Small Business Owner",
-    initials: "MT",
-  },
-  {
-    quote: "The chat feature is outstanding. I asked about every clause and got clear explanations instantly.",
-    name: "Priya Sharma",
-    role: "Freelance Consultant",
-    initials: "PS",
-  },
-];
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay }}
+      viewport={{ once: true }}
+      className="flex flex-col items-center"
+    >
+      <div className="relative w-32 h-32 mb-4">
+        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#1C2541" strokeWidth="8" />
+          <motion.circle 
+            cx="50" cy="50" r="45" fill="none" 
+            stroke={color} strokeWidth="8" strokeLinecap="round"
+            initial={{ strokeDashoffset: dashArray }}
+            whileInView={{ strokeDashoffset: dashOffset }}
+            transition={{ duration: 1.5, delay: delay + 0.2, ease: "easeOut" }}
+            style={{ strokeDasharray: dashArray }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xl font-bold text-[#EAEAEA]">{value}%</span>
+        </div>
+      </div>
+      <h4 className="text-[#EAEAEA] font-semibold tracking-wide">{label}</h4>
+    </motion.div>
+  );
+};
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[#0B132B] font-sans selection:bg-[#3A86FF] selection:text-white overflow-x-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-              <Scale size={18} className="text-white" />
+      <nav className="fixed top-0 inset-x-0 z-50 bg-[#0B132B]/80 backdrop-blur-md border-b border-[#1C2541]">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#3A86FF]/10 rounded-xl flex items-center justify-center border border-[#3A86FF]/30 shadow-[0_0_15px_rgba(58,134,255,0.2)]">
+              <Scale size={20} className="text-[#5BC0EB]" />
             </div>
-            <span className="text-lg font-bold text-gray-900">LegalDoc <span className="text-blue-600">AI</span></span>
+            <span className="text-xl font-bold tracking-wide text-[#EAEAEA]">
+              LegalDoc <span className="text-[#3A86FF] drop-shadow-[0_0_8px_rgba(58,134,255,0.4)]">AI</span>
+            </span>
           </Link>
-          <div className="flex items-center gap-2">
+
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#EAEAEA]/80">
+            <a href="#features" className="hover:text-[#5BC0EB] transition-colors">Features</a>
+            <a href="#analysis" className="hover:text-[#5BC0EB] transition-colors">Technology</a>
+          </div>
+
+          <div className="flex items-center gap-4">
             <SignedOut>
-              <Link to="/login" className="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors px-4 py-2">Sign In</Link>
-              <Link
-                to="/signup"
-                className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-xl shadow-md"
-                id="landing-get-started-top"
-              >
-                Get Started
+              <Link to="/login" className="text-sm font-medium text-[#EAEAEA]/80 hover:text-[#5BC0EB] transition-colors">
+                Sign In
+              </Link>
+              <Link to="/signup">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-sm font-bold text-white bg-[#3A86FF] hover:bg-[#5BC0EB] transition-colors px-6 py-2.5 rounded-lg shadow-[0_0_20px_rgba(58,134,255,0.3)] hover:shadow-[0_0_25px_rgba(91,192,235,0.5)]"
+                >
+                  Get Started
+                </motion.button>
               </Link>
             </SignedOut>
             <SignedIn>
-              <Link
-                to="/dashboard"
-                className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-xl shadow-md"
-              >
-                Dashboard
+              <Link to="/dashboard">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-sm font-bold text-white bg-[#3A86FF] hover:bg-[#5BC0EB] transition-colors px-6 py-2.5 rounded-lg shadow-[0_0_20px_rgba(58,134,255,0.3)]"
+                >
+                  Dashboard
+                </motion.button>
               </Link>
             </SignedIn>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 bg-gradient-to-b from-blue-50/60 via-white to-white relative overflow-hidden">
-        {/* BG Blobs */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-blue-100 rounded-full blur-3xl opacity-30 -z-10" />
-        <div className="absolute top-20 right-10 w-72 h-72 bg-indigo-100 rounded-full blur-3xl opacity-20 -z-10" />
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#3A86FF]/20 rounded-full blur-[120px] -z-10 pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#5BC0EB]/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
-        <div className="max-w-3xl mx-auto text-center animate-slide-up">
-          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 shadow-sm">
-            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-            AI-Powered Legal Intelligence
-          </div>
-          
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight tracking-tight mb-6">
-            Upload Legal Documents &<br />
-            <span className="text-blue-600">Understand Them Instantly</span>
-          </h1>
-          
-          <p className="text-lg sm:text-xl text-gray-500 leading-relaxed mb-10 max-w-2xl mx-auto">
-            LegalDoc AI analyzes contracts, leases, NDAs, and more — extracting key clauses, flagging risks, and explaining everything in plain language.
-          </p>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex flex-col items-start text-left"
+          >
+            <div className="inline-flex items-center gap-2 bg-[#1C2541] border border-[#3A86FF]/30 text-[#5BC0EB] text-xs font-bold px-4 py-2 rounded-full mb-6">
+              <span className="w-2 h-2 bg-[#5BC0EB] rounded-full animate-pulse shadow-[0_0_8px_#5BC0EB]" />
+              Secure Legal Intelligence
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-[#EAEAEA] leading-tight tracking-tight mb-6">
+              Understand Legal Documents <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3A86FF] to-[#5BC0EB] drop-shadow-lg">
+                Instantly.
+              </span>
+            </h1>
+
+            <p className="text-lg text-[#EAEAEA]/70 leading-relaxed mb-10 max-w-xl">
+              Upload legal notices and get AI-powered explanations, risk analysis, and response guidance. Keep your business and personal life protected without exorbitant legal fees.
+            </p>
+
             <SignedOut>
-              <Link
-                to="/signup"
-                id="landing-get-started-hero"
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
-              >
-                Get Started Free
-                <ArrowRight size={18} />
+              <Link to="/signup">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-3 bg-gradient-to-r from-[#3A86FF] to-[#5BC0EB] text-white font-bold px-8 py-4 rounded-xl shadow-[0_10px_30px_rgba(58,134,255,0.4)] transition-all"
+                >
+                  Analyze a Document <ArrowRight size={20} />
+                </motion.button>
               </Link>
             </SignedOut>
             <SignedIn>
-              <Link
-                to="/dashboard"
-                id="landing-get-started-hero"
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
-              >
-                Go to Dashboard
-                <ArrowRight size={18} />
+              <Link to="/upload">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-3 bg-gradient-to-r from-[#3A86FF] to-[#5BC0EB] text-white font-bold px-8 py-4 rounded-xl shadow-[0_10px_30px_rgba(58,134,255,0.4)] transition-all"
+                >
+                  Analyze a Document <ArrowRight size={20} />
+                </motion.button>
               </Link>
             </SignedIn>
-            
-            <Link
-              to="/login"
-              className="flex items-center gap-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-medium px-6 py-3.5 rounded-xl shadow-card hover:shadow-soft transition-all duration-200 text-base"
-            >
-              View Demo
-              <ChevronRight size={16} />
-            </Link>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8">
-            {['No credit card required', 'Free forever plan', 'Secure & private'].map((item) => (
-              <span key={item} className="flex items-center gap-1.5 text-sm text-gray-500">
-                <CheckCircle size={14} className="text-green-500" />
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Hero Card Preview */}
-        <div className="max-w-4xl mx-auto mt-16 px-4">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.12)] overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 px-6 py-3 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-300" />
-              <div className="w-3 h-3 rounded-full bg-amber-300" />
-              <div className="w-3 h-3 rounded-full bg-green-300" />
-              <span className="ml-3 text-xs text-gray-400 font-mono">LegalDoc AI — Document Analysis</span>
-            </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileSearch size={16} className="text-blue-600" />
-                  <span className="text-xs font-semibold text-blue-700">Document Summary</span>
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed">Standard NDA between two parties covering confidential information for a period of 3 years...</p>
-              </div>
-              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield size={16} className="text-amber-600" />
-                  <span className="text-xs font-semibold text-amber-700">Risk Assessment</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                  <span className="text-sm font-semibold text-amber-700">Medium Risk</span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">2 clauses require attention</p>
-              </div>
-              <div className="bg-green-50 rounded-2xl p-4 border border-green-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle size={16} className="text-green-600" />
-                  <span className="text-xs font-semibold text-green-700">Key Clauses</span>
-                </div>
-                <ul className="text-xs text-gray-600 space-y-1">
-                  <li className="flex items-center gap-1.5"><ChevronRight size={10} className="text-green-400" /> Confidentiality Obligation</li>
-                  <li className="flex items-center gap-1.5"><ChevronRight size={10} className="text-green-400" /> Termination Conditions</li>
-                  <li className="flex items-center gap-1.5"><ChevronRight size={10} className="text-green-400" /> Remedies Clause</li>
-                </ul>
-              </div>
-              <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageSquare size={16} className="text-purple-600" />
-                  <span className="text-xs font-semibold text-purple-700">Chat with Doc</span>
-                </div>
-                <p className="text-xs text-gray-400 italic mb-2">"What is the most risky clause?"</p>
-                <p className="text-xs text-gray-600 leading-relaxed">The penalty clause poses the highest risk — it limits your ability to seek full damages...</p>
-              </div>
-            </div>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1 }}
+            className="relative w-full aspect-square lg:aspect-auto lg:h-[600px] rounded-3xl overflow-hidden border border-[#1C2541]/50 bg-[#0B132B]/50 shadow-[inset_0_0_50px_rgba(28,37,65,0.5)]"
+          >
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-[#3A86FF] animate-pulse">Initializing Neural Engine...</div>}>
+              <HeroLegalScanner3D />
+            </Suspense>
+          </motion.div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 bg-blue-600">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
-            {stats.map(({ value, label }) => (
-              <div key={label} className="text-center">
-                <p className="text-3xl sm:text-4xl font-extrabold text-white mb-1">{value}</p>
-                <p className="text-sm text-blue-200">{label}</p>
-              </div>
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-[#1C2541]/40 border-y border-[#1C2541]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-extrabold text-[#EAEAEA] mb-4">Precision Legal Tech</h2>
+            <p className="text-[#EAEAEA]/60 max-w-2xl mx-auto">Equip yourself with tools historically reserved for large legal firms.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, idx) => (
+              <motion.div 
+                key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.15 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                className="bg-[#0B132B] border border-[#1C2541] rounded-2xl p-8 shadow-xl relative overflow-hidden group"
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#3A86FF] to-[#5BC0EB] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                <div className="w-14 h-14 bg-[#1C2541] rounded-xl flex items-center justify-center mb-6 group-hover:shadow-[0_0_20px_rgba(58,134,255,0.3)] transition-all">
+                  <feature.icon size={28} className="text-[#5BC0EB]" />
+                </div>
+                <h3 className="text-xl font-bold text-[#EAEAEA] mb-3 group-hover:text-[#5BC0EB] transition-colors">{feature.title}</h3>
+                <p className="text-[#EAEAEA]/60 leading-relaxed">{feature.desc}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-20 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Everything you need to understand legal documents</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">Powerful AI tools that make legal language accessible to everyone.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {features.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card hover:shadow-soft transition-all duration-200 group">
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
-                  <Icon size={20} className="text-blue-600" />
-                </div>
-                <h3 className="text-base font-semibold text-gray-800 mb-2">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Risk Visualization Section */}
+      <section id="analysis" className="py-24 px-6 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[400px] bg-[#3A86FF]/5 rounded-full blur-[100px] -z-10" />
+        
+        <div className="max-w-7xl mx-auto text-center">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <h2 className="text-3xl font-extrabold text-[#EAEAEA] mb-4">Real-Time Risk Profiling</h2>
+            <p className="text-[#EAEAEA]/60 max-w-2xl mx-auto">Our AI engines instantly quantify your legal exposure across hundreds of clause typologies.</p>
+          </motion.div>
 
-      {/* Testimonials */}
-      <section className="py-20 px-4 sm:px-6 bg-gray-50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Trusted by thousands</h2>
-            <p className="text-gray-500">See what our users are saying about LegalDoc AI.</p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24">
+            <RiskGauge value={85} label="Safe Elements" color="#10B981" delay={0} />
+            <RiskGauge value={12} label="Moderate Risks" color="#F59E0B" delay={0.2} />
+            <RiskGauge value={3}  label="Critical Risks" color="#EF4444" delay={0.4} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {testimonials.map(({ quote, name, role, initials }) => (
-              <div key={name} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
-                <p className="text-sm text-gray-600 leading-relaxed mb-5 italic">"{quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-700 font-bold text-xs">{initials}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{name}</p>
-                    <p className="text-xs text-gray-500">{role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 px-4 sm:px-6 bg-gradient-to-br from-blue-600 to-indigo-700">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Start understanding your legal documents today</h2>
-          <p className="text-blue-100 text-lg mb-8">Join over 10,000 users who save time and money with LegalDoc AI.</p>
-          <SignedOut>
-            <Link
-              to="/signup"
-              id="landing-cta-bottom"
-              className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
-            >
-              Get Started Free
-              <ArrowRight size={18} />
-            </Link>
-          </SignedOut>
-          <SignedIn>
-            <Link
-              to="/dashboard"
-              id="landing-cta-bottom"
-              className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-base"
-            >
-              Go to Dashboard
-              <ArrowRight size={18} />
-            </Link>
-          </SignedIn>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 py-10 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Scale size={14} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-white">LegalDoc <span className="text-blue-400">AI</span></span>
+      <footer className="bg-[#040814] py-12 px-6 border-t border-[#1C2541]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <Scale size={18} className="text-[#5BC0EB]" />
+            <span className="font-bold text-[#EAEAEA] tracking-wide">LegalDoc AI</span>
           </div>
-          <p className="text-sm text-gray-500">© 2026 LegalDoc AI. All rights reserved.</p>
-          <div className="flex gap-4">
-            {['Privacy', 'Terms', 'Contact'].map((link) => (
-              <a key={link} href="#" className="text-sm text-gray-500 hover:text-gray-300 transition-colors">{link}</a>
-            ))}
-          </div>
+          
+          <p className="text-[#EAEAEA]/40 text-sm">
+            Built for the modern legal-tech era. LiveLegal AI Hackathon Submission.
+          </p>
+
+          <a href="https://github.com" target="_blank" rel="noreferrer" className="text-[#EAEAEA]/60 hover:text-[#EAEAEA] transition-colors">
+            <Github size={20} />
+          </a>
         </div>
       </footer>
     </div>
