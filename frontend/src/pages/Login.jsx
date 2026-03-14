@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Shield, Lock, Server, CheckSquare, ArrowRight, UserCheck, Eye, EyeOff } from 'lucide-react';
+import PasswordValidator, { usePasswordValid } from '../components/PasswordValidator';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const isPasswordValid = usePasswordValid(form.password);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -84,12 +86,18 @@ export default function Login() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <PasswordValidator password={form.password} />
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-[#1C36A4] hover:bg-blue-600 text-white font-semibold py-3.5 rounded-lg text-sm transition-colors shadow-lg shadow-blue-900/40 border border-[#3b82f6]/20"
+                disabled={!isPasswordValid}
+                className={`w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg text-sm transition-all shadow-lg shadow-blue-900/40 border border-[#3b82f6]/20 ${
+                  isPasswordValid
+                    ? 'bg-[#1C36A4] hover:bg-blue-600 cursor-pointer'
+                    : 'bg-gray-700 cursor-not-allowed opacity-60'
+                }`}
               >
                 Sign In <ArrowRight size={16} />
               </button>

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Shield, Lock, Server, CheckSquare, ArrowRight, UserPlus, Eye, EyeOff } from 'lucide-react';
+import PasswordValidator, { usePasswordValid } from '../components/PasswordValidator';
 
 export default function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const isPasswordValid = usePasswordValid(form.password);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -94,13 +96,18 @@ export default function Signup() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <p className="text-[10px] text-gray-500 font-medium mt-2">Must be at least 8 characters with numbers and symbols.</p>
+              <PasswordValidator password={form.password} />
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 dark:bg-[#1C36A4] hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-3.5 rounded-lg text-sm transition-colors shadow-md dark:shadow-lg dark:shadow-blue-900/40 border border-transparent dark:border-[#3b82f6]/20"
+                disabled={!isPasswordValid}
+                className={`w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg text-sm transition-all shadow-md dark:shadow-lg dark:shadow-blue-900/40 border border-transparent dark:border-[#3b82f6]/20 ${
+                  isPasswordValid
+                    ? 'bg-blue-600 dark:bg-[#1C36A4] hover:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer'
+                    : 'bg-gray-600 dark:bg-gray-700 cursor-not-allowed opacity-60'
+                }`}
               >
                 Create Account <ArrowRight size={16} />
               </button>
