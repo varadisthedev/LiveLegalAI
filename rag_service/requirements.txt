@@ -1,0 +1,51 @@
+# ------------------------------------------------------------------
+# RAG Microservice — Python Dependencies
+# LiveLegal AI — Legal Document Analysis
+# ------------------------------------------------------------------
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Request/Response validation
+pydantic==2.10.6
+pydantic-settings==2.7.1
+
+# Environment variable loading
+python-dotenv==1.0.1
+
+# File upload handling (FastAPI dependency)
+python-multipart==0.0.20
+
+# ---------------------------------------------------------------------------
+# Document Parsing
+# ---------------------------------------------------------------------------
+pdfplumber==0.11.5           # PDF text extraction (better layout than pypdf)
+python-docx==1.1.2           # DOCX text extraction
+
+# ---------------------------------------------------------------------------
+# Embeddings — SentenceTransformers (local, free, default)
+# ---------------------------------------------------------------------------
+sentence-transformers==3.3.1
+torch==2.6.0                 # Required by sentence-transformers (CPU version)
+
+# ---------------------------------------------------------------------------
+# Embeddings — OpenAI (optional, set USE_OPENAI_EMBEDDINGS=true)
+# ---------------------------------------------------------------------------
+openai==1.59.9
+
+# ---------------------------------------------------------------------------
+# Vector Store
+# ---------------------------------------------------------------------------
+faiss-cpu==1.9.0.post1       # Local FAISS (CPU build — sufficient for hackathon)
+numpy==1.26.4                # Required by FAISS and embeddings
+
+# ---------------------------------------------------------------------------
+# LLM — Anthropic Claude
+# ---------------------------------------------------------------------------
+anthropic==0.43.0
+
+# ---------------------------------------------------------------------------
+# Dev / testing utilities
+# ---------------------------------------------------------------------------
+httpx==0.28.1                # For async test client (optional)
