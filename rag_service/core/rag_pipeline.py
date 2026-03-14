@@ -13,6 +13,10 @@ Each pipeline function makes every step explicit.
 There are no "magic chains" — you can read top-to-bottom and understand
 exactly what happens at every stage. Every step is logged.
 
+LLM BACKEND: Google Gemini (google-generativeai SDK)
+  - Uses gemini-2.0-flash by default (fast, cheap, high quality)
+  - Model is configurable via GEMINI_MODEL env var
+
 PIPELINE FUNCTIONS
 ------------------
   run_ingest_pipeline(file_path, document_id, filename)  →  IngestResponse
@@ -20,8 +24,9 @@ PIPELINE FUNCTIONS
   run_chat_pipeline(document_id, question)               →  ChatResponse
 """
 
-import anthropic
-from config import ANTHROPIC_API_KEY, CLAUDE_MODEL
+import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from config import GEMINI_API_KEY, GEMINI_MODEL
 from core.document_parser import parse_document
 from core.text_cleaner import clean_text
 from core.chunker import split_into_chunks
@@ -34,11 +39,71 @@ from logger import get_logger
 
 logger = get_logger(__name__)
 
-# Initialise the Anthropic client once at module level (not per-request)
-if not ANTHROPIC_API_KEY:
-    logger.warning("ANTHROPIC_API_KEY is not set — Claude calls will fail!")
+# ---------------------------------------------------------------------------
+# Initialise Gemini client once at module level (not per-request).
+# google-generativeai uses a global configure() call, then model instances.
+# ---------------------------------------------------------------------------
+if not GEMINI_API_KEY:
+    logger.warning("GEMINI_API_KEY is not set — Gemini calls will fail!")
 
-claude_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Gemini model instance — reused across all requests
+_gemini_model = genai.GenerativeModel(
+    model_name=GEMINI_MODEL,
+    # Safety settings use enum values — required by google-generativeai v0.8.x
+    # (plain strings like 'DANGEROUS_CONTENT' cause a KeyError in this version)
+    safety_settings={
+        HarmCategory.HARM_CATEGORY_HARASSMENT:        HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH:       HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    },
+)
+
+logger.info(f"Gemini model initialised: {GEMINI_MODEL}")
+
+
+def _call_gemini(system_prompt: str, user_prompt: str, max_tokens: int = 1500) -> str:
+    """
+    Send a prompt to Gemini and return the text response.
+
+    Gemini's SDK combines system + user prompts differently from Claude:
+      - We prefix the system instructions into the user message since
+        GenerativeModel.generate_content() takes a single prompt string.
+      - Alternatively we use system_instruction= (supported in Gemini 1.5+).
+
+    Args:
+        system_prompt : Instructions for how Gemini should behave.
+        user_prompt   : The actual request / question with document context.
+        max_tokens    : Maximum output token budget.
+
+    Returns:
+        The generated text string.
+
+    Raises:
+        RuntimeError: If Gemini returns no content.
+    """
+    response = _gemini_model.generate_content(
+        # Combine system + user into one prompt (cleanest cross-version approach)
+        f"{system_prompt}\n\n{user_prompt}",
+        generation_config=genai.types.GenerationConfig(
+            max_output_tokens=max_tokens,
+            temperature=0.3,   # Low temperature for factual legal responses
+        ),
+    )
+
+    # Gemini response structure: response.text (shortcut) or response.candidates[0]
+    if not response.candidates:
+        raise RuntimeError(
+            "Gemini returned no candidates. The prompt may have been blocked by safety filters."
+        )
+
+    text = response.text
+    if not text:
+        raise RuntimeError("Gemini returned an empty response text.")
+
+    return text
 
 
 # ===========================================================================
@@ -55,6 +120,8 @@ def run_ingest_pipeline(file_path: str, document_id: str, filename: str) -> Inge
       3. Chunk the text into overlapping segments
       4. Generate embeddings for all chunks
       5. Build and persist a FAISS index
+
+    Note: Ingest does NOT call Gemini — it is pure local processing.
 
     Args:
         file_path   : Absolute path to the uploaded file on disk.
@@ -110,8 +177,8 @@ def run_analyze_pipeline(document_id: str, query: str) -> AnalyzeResponse:
     Steps:
       1. Retrieve relevant chunks from FAISS
       2. Compute severity score from chunk text
-      3. Build a structured prompt for Claude
-      4. Call Claude to get summary / explanation / suggested_reply
+      3. Build a structured prompt for Gemini
+      4. Call Gemini to get summary / explanation / suggested_reply
       5. Return structured AnalyzeResponse
 
     Args:
@@ -128,9 +195,8 @@ def run_analyze_pipeline(document_id: str, query: str) -> AnalyzeResponse:
     chunks = retrieve_top_chunks(document_id, query)
     context = format_context(chunks)
 
-    # Step 2: Compute severity score from retrieved context
+    # Step 2: Compute severity score
     logger.info("Step 2/3 — Computing severity score")
-    # Use all chunk text for severity scoring — join retrieved chunks
     combined_text = "\n".join(chunks)
     severity_score, triggered_rules = compute_severity_score(combined_text)
     severity_explanation = (
@@ -138,8 +204,8 @@ def run_analyze_pipeline(document_id: str, query: str) -> AnalyzeResponse:
         + (f"Risk factors detected: {', '.join(triggered_rules)}." if triggered_rules else "No major risk factors detected.")
     )
 
-    # Step 3: Call Claude for structured analysis
-    logger.info("Step 3/3 — Sending context to Claude for analysis")
+    # Step 3: Call Gemini for structured analysis
+    logger.info("Step 3/3 — Sending context to Gemini for analysis")
 
     system_prompt = (
         "You are a legal assistant helping ordinary people understand legal documents.\n"
@@ -151,7 +217,7 @@ def run_analyze_pipeline(document_id: str, query: str) -> AnalyzeResponse:
         "  - Always be concise, clear, and empathetic to someone who may be stressed about a legal notice.\n"
     )
 
-    user_prompt = f"""You have been given excerpts from a legal document. 
+    user_prompt = f"""You have been given excerpts from a legal document.
 Please provide a structured analysis with EXACTLY these three sections, clearly labeled:
 
 SUMMARY:
@@ -170,17 +236,10 @@ Provide a practical suggested action or draft reply the recipient could take. Be
 Additional context: {severity_explanation}
 """
 
-    response = claude_client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=1500,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    full_response = _call_gemini(system_prompt, user_prompt, max_tokens=1500)
+    logger.debug(f"Gemini raw response length: {len(full_response)} characters")
 
-    full_response = response.content[0].text
-    logger.debug(f"Claude raw response length: {len(full_response)} characters")
-
-    # Parse the three sections from Claude's structured response
+    # Parse the three sections from Gemini's structured response
     summary, explanation, suggested_reply = _parse_analyze_response(full_response)
 
     logger.info(f"===== ANALYZE PIPELINE COMPLETE | severity_score={severity_score} =====")
@@ -196,7 +255,7 @@ Additional context: {severity_explanation}
 
 def _parse_analyze_response(text: str) -> tuple:
     """
-    Parse Claude's three-section analysis response.
+    Parse Gemini's three-section analysis response.
 
     Looks for SUMMARY:, EXPLANATION:, and SUGGESTED REPLY: labels.
     Falls back gracefully if the model doesn't follow the exact format.
@@ -207,8 +266,6 @@ def _parse_analyze_response(text: str) -> tuple:
     import re
 
     def extract_section(label: str, next_labels: list, full_text: str) -> str:
-        """Extract content between `label:` and the next section label."""
-        # Build a pattern that matches from `label:` to the next section or end-of-string
         others = "|".join(re.escape(l) for l in next_labels)
         pattern = rf"{re.escape(label)}:\s*(.*?)(?=(?:{others}):|$)"
         match = re.search(pattern, full_text, flags=re.IGNORECASE | re.DOTALL)
@@ -216,18 +273,17 @@ def _parse_analyze_response(text: str) -> tuple:
             return match.group(1).strip()
         return ""
 
-    summary = extract_section("SUMMARY", ["EXPLANATION", "SUGGESTED REPLY"], text)
-    explanation = extract_section("EXPLANATION", ["SUMMARY", "SUGGESTED REPLY"], text)
-    suggested_reply = extract_section("SUGGESTED REPLY", ["SUMMARY", "EXPLANATION"], text)
+    summary        = extract_section("SUMMARY",        ["EXPLANATION", "SUGGESTED REPLY"], text)
+    explanation    = extract_section("EXPLANATION",    ["SUMMARY",     "SUGGESTED REPLY"], text)
+    suggested_reply = extract_section("SUGGESTED REPLY", ["SUMMARY",   "EXPLANATION"],     text)
 
-    # Fallback: if parsing fails, return the whole response as summary
     if not summary and not explanation and not suggested_reply:
-        logger.warning("Could not parse structured sections from Claude response — returning raw text as summary")
+        logger.warning("Could not parse structured sections from Gemini response — returning raw text as summary")
         return text, "See summary above.", "Please consult a qualified legal professional."
 
     return (
-        summary or "Summary not available.",
-        explanation or "Explanation not available.",
+        summary         or "Summary not available.",
+        explanation     or "Explanation not available.",
         suggested_reply or "Please consult a qualified legal professional.",
     )
 
@@ -243,12 +299,8 @@ def run_chat_pipeline(document_id: str, question: str) -> ChatResponse:
     Steps:
       1. Retrieve the top-K relevant chunks for the question
       2. Build a grounded prompt with the retrieved context
-      3. Send to Claude with strict instructions to stay within the document
+      3. Send to Gemini with strict instructions to stay within the document
       4. Return the answer
-
-    The key difference vs. /analyze:
-      - /analyze  → broad, structured multi-section analysis
-      - /chat     → focused answer to one specific question, strictly grounded
 
     Args:
         document_id : The document to query.
@@ -265,8 +317,8 @@ def run_chat_pipeline(document_id: str, question: str) -> ChatResponse:
     chunks = retrieve_top_chunks(document_id, question)
     context = format_context(chunks)
 
-    # Step 2: Build and send Claude prompt
-    logger.info("Step 2/2 — Sending context + question to Claude")
+    # Step 2: Build and send Gemini prompt
+    logger.info("Step 2/2 — Sending context + question to Gemini")
 
     system_prompt = (
         "You are a legal document assistant.\n"
@@ -290,15 +342,10 @@ QUESTION: {question}
 Answer the question concisely and clearly. If the information is not present in the excerpts, say so.
 """
 
-    response = claude_client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=800,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    answer = _call_gemini(system_prompt, user_prompt, max_tokens=800)
+    answer = answer.strip()
 
-    answer = response.content[0].text.strip()
-    logger.info(f"Claude answer generated — {len(answer)} characters")
+    logger.info(f"Gemini answer generated — {len(answer)} characters")
     logger.info(f"===== CHAT PIPELINE COMPLETE =====")
 
     return ChatResponse(

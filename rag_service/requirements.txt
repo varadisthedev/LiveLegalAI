@@ -41,9 +41,9 @@ faiss-cpu==1.9.0.post1       # Local FAISS (CPU build — sufficient for hackath
 numpy>=1.26.4                # Required by FAISS and embeddings
 
 # ---------------------------------------------------------------------------
-# LLM — Anthropic Claude
+# LLM — Google Gemini
 # ---------------------------------------------------------------------------
-anthropic==0.43.0
+google-generativeai==0.8.3
 
 # ---------------------------------------------------------------------------
 # Dev / testing utilities

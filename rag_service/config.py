@@ -14,10 +14,12 @@ load_dotenv()
 
 
 # ---------------------------------------------------------------------------
-# Anthropic / Claude
+# Google Gemini
 # ---------------------------------------------------------------------------
-ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-CLAUDE_MODEL: str = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+# gemini-2.0-flash is fast and cheap — ideal for hackathons
+# Other options: gemini-1.5-pro, gemini-1.5-flash
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 # ---------------------------------------------------------------------------
 # OpenAI (used for embeddings if USE_OPENAI_EMBEDDINGS=true)
