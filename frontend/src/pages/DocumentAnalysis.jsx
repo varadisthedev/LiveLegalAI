@@ -11,7 +11,6 @@ export default function DocumentAnalysis() {
   const navigate = useNavigate();
   const { user } = useUser();
   const contentRef = useRef(null);
-  const hasFiredRef = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,19 +40,29 @@ export default function DocumentAnalysis() {
     }
   }, [documentId, user?.id]);
 
-  // ─── NUCLEAR SIMPLE: plain fetch inside useEffect, fires once on mount ───
+  // ─── FETCH ON MOUNT: fires when documentId becomes available ───────────────
   useEffect(() => {
-    if (!documentId) return;
-    if (hasFiredRef.current) return;
-    hasFiredRef.current = true;
+    console.log('[DA] useEffect triggered. documentId =', documentId);
+    if (!documentId) {
+      console.warn('[DA] no documentId — aborting');
+      setLoading(false);
+      return;
+    }
 
     const BACKEND = (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app').replace(/\/+$/, '');
-    const userId   = sessionStorage.getItem('ll_user_id') || 'anonymous';
+    const userId  = sessionStorage.getItem('ll_user_id') || 'anonymous';
 
-    console.log('[DA:effect] ▶ calling', BACKEND + '/api/chat/analyze', { documentId, userId });
+    console.log('[DA] ▶ POST', `${BACKEND}/api/chat/analyze`);
+    console.log('[DA]   documentId:', documentId, '| userId:', userId);
 
     const ctrl  = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 45000);
+    const timer = setTimeout(() => {
+      console.warn('[DA] ⏱ 45s timeout — aborting fetch');
+      ctrl.abort();
+    }, 45000);
+
+    setLoading(true);
+    setError('');
 
     fetch(`${BACKEND}/api/chat/analyze`, {
       method : 'POST',
@@ -63,23 +72,40 @@ export default function DocumentAnalysis() {
     })
       .then(r => {
         clearTimeout(timer);
-        if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status}: ${t.slice(0, 200)}`); });
+        console.log('[DA] ◀ HTTP', r.status, r.ok ? 'OK' : 'ERROR');
+        if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status}: ${t.slice(0, 300)}`); });
         return r.json();
       })
       .then(data => {
-        if (data.success && data.data) { setAnalysis(data.data); }
-        else { setError(data.error || 'Analysis failed. Please retry.'); }
+        console.log('[DA] ✅ data.success =', data.success, '| keys:', Object.keys(data));
+        if (data.success && data.data) {
+          setAnalysis(data.data);
+        } else {
+          setError(data.error || 'Analysis failed. Please retry.');
+        }
       })
       .catch(err => {
         clearTimeout(timer);
-        if (err.name !== 'AbortError') { setError(err.message || 'Connection error.'); }
-        else { setError('Timed out (45s). Please retry.'); }
+        if (err.name === 'AbortError') {
+          console.warn('[DA] fetch aborted (component unmounted or timeout)');
+          // Don't setError on abort — component may be unmounting
+        } else {
+          console.error('[DA] ❌ fetch error:', err.message);
+          setError(err.message || 'Connection error. Please retry.');
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        console.log('[DA] finally — setLoading(false)');
+        setLoading(false);
+      });
 
-    return () => { ctrl.abort(); clearTimeout(timer); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId]);
+    // Cleanup on unmount — cancelled fetch won't update state
+    return () => {
+      console.log('[DA] cleanup — aborting fetch');
+      ctrl.abort();
+      clearTimeout(timer);
+    };
+  }, [documentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDownloadSnapshot = async () => {
     if (!contentRef.current) return;

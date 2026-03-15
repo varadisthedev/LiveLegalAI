@@ -116,7 +116,9 @@ export function useTTS(lang = 'en-US') {
       const msg = err.message || '';
 
       // Determine if this is an auth / account block — if so, use browser TTS silently
-      const isAuthError = msg.includes('401') || msg.includes('403') || msg.includes('unusual_activity') || msg.includes('not configured');
+      const isAuthError = msg.includes('401') || msg.includes('402') || msg.includes('403')
+        || msg.includes('payment_required') || msg.includes('paid_plan')
+        || msg.includes('unusual_activity') || msg.includes('not configured');
 
       if (isAuthError) {
         // Switch to browser TTS silently — user still gets voice
