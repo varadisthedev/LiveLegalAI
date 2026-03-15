@@ -17,74 +17,69 @@ export default function DocumentAnalysis() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Resolve userId: Clerk user takes priority, sessionStorage (set at upload) is the
-  // immediate fallback — avoids spinner when Clerk is slow to re-initialise after navigation.
-  const getUserId = useCallback(() => {
-    return user?.id || sessionStorage.getItem('ll_user_id') || 'anonymous';
-  }, [user?.id]);
-
+  // Manual retry — resets hasFiredRef and calls analyzeDoc
   const analyzeDoc = useCallback(async () => {
     if (!documentId) return;
     setLoading(true);
     setError('');
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000);
-
+    const BACKEND = (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app').replace(/\/+$/, '');
+    const userId = user?.id || sessionStorage.getItem('ll_user_id') || 'anonymous';
+    console.log('[DA:retry] calling analyze', { documentId, userId });
     try {
-      const userId = getUserId();
-      console.log('[DocumentAnalysis] Calling /api/chat/analyze', { documentId, userId });
-
-      const res = await fetch(
-        apiUrl('/api/chat/analyze'),
-        {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': userId,
-          },
-          body: JSON.stringify({ document_id: documentId }),
-        }
-      );
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('[DocumentAnalysis] HTTP error:', res.status, text.slice(0, 300));
-        setError(`Server error (${res.status}). Please retry.`);
-        return;
-      }
-
+      const res = await fetch(`${BACKEND}/api/chat/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+        body: JSON.stringify({ document_id: documentId }),
+      });
       const data = await res.json();
-      console.log('[DocumentAnalysis] Response success:', data.success);
-
-      if (data.success && data.data) {
-        setAnalysis(data.data);
-      } else {
-        setError(data.error || 'Failed to analyse document. Please retry.');
-      }
+      if (data.success && data.data) { setAnalysis(data.data); }
+      else { setError(data.error || 'Analysis failed. Please retry.'); }
     } catch (err) {
-      clearTimeout(timeout);
-      console.error('[DocumentAnalysis] Fetch error:', err.name, err.message);
-      if (err.name === 'AbortError') {
-        setError('Analysis timed out (45s). The AI may be busy — please retry.');
-      } else {
-        setError(`Connection error: ${err.message}`);
-      }
+      setError(err.message || 'Connection error. Please retry.');
     } finally {
       setLoading(false);
     }
-  }, [documentId, getUserId]);
+  }, [documentId, user?.id]);
 
+  // ─── NUCLEAR SIMPLE: plain fetch inside useEffect, fires once on mount ───
   useEffect(() => {
-    // Fire immediately on mount — don't wait for Clerk.
-    // sessionStorage has the userId from the upload step.
     if (!documentId) return;
     if (hasFiredRef.current) return;
     hasFiredRef.current = true;
-    analyzeDoc();
-  }, [documentId, analyzeDoc]);
+
+    const BACKEND = (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app').replace(/\/+$/, '');
+    const userId   = sessionStorage.getItem('ll_user_id') || 'anonymous';
+
+    console.log('[DA:effect] ▶ calling', BACKEND + '/api/chat/analyze', { documentId, userId });
+
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 45000);
+
+    fetch(`${BACKEND}/api/chat/analyze`, {
+      method : 'POST',
+      signal : ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+      body   : JSON.stringify({ document_id: documentId }),
+    })
+      .then(r => {
+        clearTimeout(timer);
+        if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status}: ${t.slice(0, 200)}`); });
+        return r.json();
+      })
+      .then(data => {
+        if (data.success && data.data) { setAnalysis(data.data); }
+        else { setError(data.error || 'Analysis failed. Please retry.'); }
+      })
+      .catch(err => {
+        clearTimeout(timer);
+        if (err.name !== 'AbortError') { setError(err.message || 'Connection error.'); }
+        else { setError('Timed out (45s). Please retry.'); }
+      })
+      .finally(() => setLoading(false));
+
+    return () => { ctrl.abort(); clearTimeout(timer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentId]);
 
   const handleDownloadSnapshot = async () => {
     if (!contentRef.current) return;
