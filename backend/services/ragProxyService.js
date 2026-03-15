@@ -53,6 +53,9 @@ const analyzeDocument = async (documentId, query = 'Summarise this legal documen
   if (!response.ok) {
     const errBody = await response.text();
     logger.error(`RAG /analyze failed: ${errBody}`);
+    if (response.status === 404) {
+      throw new Error('DOCUMENT_INDEX_EXPIRED');
+    }
     throw new Error(`RAG service analysis failed: ${response.status}`);
   }
 
@@ -77,6 +80,9 @@ const chatWithDocument = async (documentId, question) => {
   if (!response.ok) {
     const errBody = await response.text();
     logger.error(`RAG /chat failed: ${errBody}`);
+    if (response.status === 404) {
+      throw new Error('DOCUMENT_INDEX_EXPIRED');
+    }
     throw new Error(`RAG service chat failed: ${response.status}`);
   }
 

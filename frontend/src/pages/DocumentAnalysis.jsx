@@ -157,15 +157,24 @@ export default function DocumentAnalysis() {
           <p className="text-sm text-[#6b21a8] mt-1">This usually takes 10–20 seconds</p>
         </div>
       ) : error ? (
-        <div className="py-20 text-center">
+        <div className="py-20 text-center px-4">
           <AlertCircle size={36} className="text-red-400 mx-auto mb-4" />
-          <p className="text-red-400 font-medium mb-2">{error}</p>
-          <button
-            onClick={analyzeDoc}
-            className="mt-4 inline-flex items-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold px-6 py-2.5 rounded-full transition-all"
-          >
-            <RefreshCw size={14} /> Retry Analysis
-          </button>
+          <p className="text-red-400 font-medium mb-2 max-w-md mx-auto">{error}</p>
+          {error.includes('expired') || error.includes('re-upload') || error.includes('Re-upload') ? (
+            <button
+              onClick={() => navigate('/upload')}
+              className="mt-4 inline-flex items-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold px-6 py-2.5 rounded-full transition-all"
+            >
+              <FileText size={14} /> Re-upload Document
+            </button>
+          ) : (
+            <button
+              onClick={analyzeDoc}
+              className="mt-4 inline-flex items-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold px-6 py-2.5 rounded-full transition-all"
+            >
+              <RefreshCw size={14} /> Retry Analysis
+            </button>
+          )}
         </div>
       ) : analysis ? (
       <div ref={contentRef} className="px-1">

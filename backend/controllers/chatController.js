@@ -65,6 +65,12 @@ const analyzeDoc = async (req, res, next) => {
     return res.status(200).json(formatResponse(true, result));
 
   } catch (error) {
+    // FAISS index was wiped by a container restart — user needs to re-upload
+    if (error.message === 'DOCUMENT_INDEX_EXPIRED') {
+      return res.status(404).json(formatResponse(false, null,
+        'This document\'s index has expired (server was restarted). Please re-upload the document to analyse it again.'
+      ));
+    }
     next(error);
   }
 };
@@ -99,6 +105,11 @@ const chatWithDoc = async (req, res, next) => {
     return res.status(200).json(formatResponse(true, result));
 
   } catch (error) {
+    if (error.message === 'DOCUMENT_INDEX_EXPIRED') {
+      return res.status(404).json(formatResponse(false, null,
+        'This document\'s index has expired (server was restarted). Please re-upload the document to continue chatting.'
+      ));
+    }
     next(error);
   }
 };
