@@ -41,7 +41,7 @@ function App() {
         <Route path="/voice-settings" element={<ProtectedRoute><VoiceSettings /></ProtectedRoute>} />
         
         {/* Dynamic App Routes */}
-        <Route path="/analysis/:id?" element={<ProtectedRoute><DocumentAnalysis /></ProtectedRoute>} />
+        <Route path="/analysis/:documentId" element={<ProtectedRoute><DocumentAnalysis /></ProtectedRoute>} />
         <Route path="/analysis" element={<ProtectedRoute><DocumentAnalysis /></ProtectedRoute>} />
         
         <Route path="/chat/:id?" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
