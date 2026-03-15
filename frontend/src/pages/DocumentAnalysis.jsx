@@ -9,24 +9,27 @@ import { apiUrl } from '../services/api';
 export default function DocumentAnalysis() {
   const { documentId } = useParams();
   const navigate = useNavigate();
-  const { user } = useUser();
+  // Single useUser() call — isLoaded is true once Clerk has finished initialising
+  const { user, isLoaded } = useUser();
   const contentRef = useRef(null);
+  const hasFiredRef = useRef(false); // Prevent double-fire in StrictMode
   const [isDownloading, setIsDownloading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { isLoaded: clerkLoaded } = useUser();
 
   const analyzeDoc = useCallback(async () => {
     if (!documentId) return;
     setLoading(true);
     setError('');
 
-    // 30-second hard timeout so spinner never hangs forever
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
     try {
+      const userId = user?.id || 'anonymous';
+      console.log('[DocumentAnalysis] Calling /api/chat/analyze', { documentId, userId });
+
       const res = await fetch(
         apiUrl('/api/chat/analyze'),
         {
@@ -34,36 +37,49 @@ export default function DocumentAnalysis() {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user?.id || 'anonymous',
+            'x-user-id': userId,
           },
           body: JSON.stringify({ document_id: documentId }),
         }
       );
       clearTimeout(timeout);
 
+      // Check HTTP status before parsing JSON
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('[DocumentAnalysis] HTTP error:', res.status, text.slice(0, 200));
+        setError(`Server returned ${res.status}. Please retry.`);
+        return;
+      }
+
       const data = await res.json();
+      console.log('[DocumentAnalysis] Response:', data.success, Object.keys(data));
+
       if (data.success && data.data) {
         setAnalysis(data.data);
       } else {
-        setError(data.error || 'Failed to analyse document. Please try again.');
+        setError(data.error || 'Failed to analyse document. Please retry.');
       }
     } catch (err) {
       clearTimeout(timeout);
+      console.error('[DocumentAnalysis] Fetch error:', err);
       if (err.name === 'AbortError') {
-        setError('Analysis timed out after 30 seconds. The server may be busy — please retry.');
+        setError('Analysis timed out (45s). The AI may be busy — please retry.');
       } else {
-        setError('Could not reach the analysis server. Check your connection and retry.');
+        setError(`Connection error: ${err.message}`);
       }
     } finally {
       setLoading(false);
     }
-  }, [documentId, user?.id]);
+  }, [documentId, user?.id]); // eslint-disable-line
 
   useEffect(() => {
-    // Wait until Clerk has finished loading so user?.id is reliable
-    if (!clerkLoaded) return;
+    if (!isLoaded) return;           // Clerk still initialising
+    if (!documentId) return;         // No doc ID in URL
+    if (hasFiredRef.current) return; // Already fired (StrictMode guard)
+    hasFiredRef.current = true;
     analyzeDoc();
-  }, [clerkLoaded, analyzeDoc]);
+  }, [isLoaded, documentId, analyzeDoc]);
 
   const handleDownloadSnapshot = async () => {
     if (!contentRef.current) return;
