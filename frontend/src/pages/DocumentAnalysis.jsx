@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import html2canvas from 'html2canvas';
 import AppLayout from '../components/AppLayout';
+import { apiUrl } from '../services/api';
 
 export default function DocumentAnalysis() {
   const { documentId } = useParams();
@@ -27,7 +28,7 @@ export default function DocumentAnalysis() {
 
     try {
       const res = await fetch(
-        (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app') + '/api/chat/analyze',
+        apiUrl('/api/chat/analyze'),
         {
           method: 'POST',
           signal: controller.signal,

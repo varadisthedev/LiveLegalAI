@@ -4,6 +4,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { useTTS } from '../hooks/useTTS';
 import { useSTT } from '../hooks/useSTT';
+import { apiUrl } from '../services/api';
 
 const FORMAT_OPTIONS = [
   {
@@ -33,7 +34,7 @@ const COLOR_MAP = {
 };
 async function fetchAIResponse(documentId, question, formatValue, languageCode, sessionId, userId) {
   try {
-    const response = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/chat/chat', {
+    const response = await fetch(apiUrl('/api/chat/chat'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,7 +99,7 @@ export default function ChatWidget() {
     const fetchDocName = async () => {
       if (!documentId || documentId === 'dashboard' || documentId === 'history' || documentId === 'settings') return;
       try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app"}/api/document/history`, {
+        const res = await fetch(apiUrl('/api/document/history'), {
           headers: { 'x-user-id': user?.id || 'user_12345' }
         });
         const data = await res.json();

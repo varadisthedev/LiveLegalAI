@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import AppLayout from '../components/AppLayout';
+import { apiUrl } from '../services/api';
 
 const getRiskColor = (riskLevel) => {
   if (riskLevel === 'High') return 'text-red-700 dark:text-red-500 bg-red-100 dark:bg-red-500/10 border-red-200 dark:border-red-500/20';
@@ -40,7 +41,7 @@ export default function History() {
     const fetchHistory = async () => {
       try {
         const res = await fetch(
-          (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app') + '/api/document/history',
+          apiUrl('/api/document/history'),
           { headers: { 'x-user-id': user?.id || 'anonymous' } }
         );
         const data = await res.json();

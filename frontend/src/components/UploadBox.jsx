@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Upload, FileText, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
+import { apiUrl } from '../services/api';
 
 const ACCEPTED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
 const ACCEPTED_EXTS = ['.pdf', '.docx', '.txt'];
@@ -56,7 +57,7 @@ export default function UploadBox({ onUploadComplete }) {
       const formData = new FormData();
       formData.append('document', file); // API expects 'document' field name
 
-      const response = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/document/upload', {
+      const response = await fetch(apiUrl('/api/document/upload'), {
         method: 'POST',
         headers: {
           'x-user-id': user?.id || 'user_12345'

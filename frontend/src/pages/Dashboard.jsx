@@ -4,6 +4,7 @@ import { useUser } from '@clerk/clerk-react';
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import RiskIndicator from '../components/RiskIndicator';
+import { apiUrl } from '../services/api';
 
 const stats = [
   { label: 'Total Documents', value: '4', icon: FileText, color: 'blue', change: '+2 this month' },
@@ -36,7 +37,7 @@ export default function Dashboard() {
     const fetchHistory = async () => {
       try {
         const res = await fetch(
-          (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app') + '/api/document/history',
+          apiUrl('/api/document/history'),
           { headers: { 'x-user-id': user?.id || 'anonymous' } }
         );
         const data = await res.json();
