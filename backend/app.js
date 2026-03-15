@@ -15,12 +15,15 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
+// Trust Railway/Vercel reverse proxy so req.ip is the real client IP
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(helmet());
-app.use(cors());
-app.use(express.json()); // Parse JSON bodies
+app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','x-user-id','Authorization'] }));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev')); // Logging
+app.use(morgan('combined'));
 app.use(globalLimiter);
 
 // Serve uploads statically if needed (for user to view uploaded image later)
