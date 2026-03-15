@@ -1,4 +1,4 @@
-import { Bell, Search, ChevronDown, Plus, FileText, ArrowRight, Upload, MessageSquare } from 'lucide-react';
+import { Bell, Search, Plus, FileText, ArrowRight, Upload, MessageSquare } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
@@ -18,7 +18,7 @@ const getRiskText = (riskLevel) => {
 
 export default function History() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [showOptions, setShowOptions] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,30 +30,30 @@ export default function History() {
         setShowOptions(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
+    // Guard: wait for Clerk to finish loading — user?.id is a stable primitive
+    if (!isLoaded) return;
     const fetchHistory = async () => {
       try {
-        const res = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/document/history', {
-          headers: { 'x-user-id': user?.id || 'user_12345' }
-        });
+        const res = await fetch(
+          (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app') + '/api/document/history',
+          { headers: { 'x-user-id': user?.id || 'anonymous' } }
+        );
         const data = await res.json();
-        if (data.success) {
-          setDocuments(data.data);
-        }
+        if (data.success) setDocuments(data.data);
       } catch (err) {
         console.error('Failed to fetch history:', err);
       } finally {
         setLoading(false);
       }
     };
-    if (user) {
-      fetchHistory();
-    }
-  }, [user]);
+    fetchHistory();
+  // user?.id is a stable string — won't cause re-fire on every Clerk re-render
+  }, [isLoaded, user?.id]);
 
   return (
     <AppLayout>

@@ -1,52 +1,59 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, LogOut, Scale } from 'lucide-react';
+import { LogOut, Sparkles } from 'lucide-react';
+import { useClerk, SignedIn, SignedOut } from '@clerk/clerk-react';
 
 export default function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const isAuthPage = ['/', '/login'].includes(location.pathname);
+  const navigate  = useNavigate();
+  const { signOut } = useClerk();
+  const isLanding = location.pathname === '/';
+
+  // Hide on authenticated inner pages (they use sidebar)
+  const hiddenPaths = ['/dashboard', '/upload', '/history', '/chat', '/settings', '/voice-settings', '/document'];
+  const hideNavbar = hiddenPaths.some(p => location.pathname.startsWith(p));
+  if (hideNavbar) return null;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:bg-blue-700 transition-colors">
-              <Scale className="w-4.5 h-4.5 text-white" size={18} />
-            </div>
-            <span className="text-lg font-bold text-gray-900">
-              LegalDoc <span className="text-blue-600">AI</span>
-            </span>
-          </Link>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#07020d]/80 backdrop-blur-md border-b border-[#2d1b4e]">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full grid place-items-center bg-[#7c3aed]/10 border border-[#7c3aed]/30">
+            <Sparkles size={16} className="text-[#c4b5fd]" />
+          </div>
+          <span className="text-lg font-bold text-white">
+            LiveLegal <span className="text-[#9333ea]">AI</span>
+          </span>
+        </Link>
 
-          {/* Nav Actions */}
-          {!isAuthPage && (
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-xs">JD</span>
-                </div>
-                <span className="font-medium text-gray-700">Jane Doe</span>
-              </span>
-              <button
-                onClick={() => navigate('/login')}
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50"
-              >
-                <LogOut size={15} />
-                <span className="hidden sm:inline">Sign Out</span>
-              </button>
-            </div>
-          )}
-
-          {isAuthPage && location.pathname === '/' && (
-            <Link
-              to="/login"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors px-4 py-2 rounded-lg hover:bg-blue-50"
-            >
+        <div className="flex items-center gap-4">
+          <SignedOut>
+            <Link to="/login"
+              className="text-sm font-medium text-[#a78bfa] hover:text-white transition-colors">
               Sign In
             </Link>
-          )}
+            {isLanding && (
+              <Link to="/signup">
+                <button className="text-sm font-bold text-white bg-gradient-to-r from-[#7c3aed] to-[#9333ea] px-5 py-2 rounded-full hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all">
+                  Get Started
+                </button>
+              </Link>
+            )}
+          </SignedOut>
+
+          <SignedIn>
+            <Link to="/dashboard">
+              <button className="text-sm font-bold text-white bg-gradient-to-r from-[#7c3aed] to-[#9333ea] px-5 py-2 rounded-full hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all">
+                Dashboard
+              </button>
+            </Link>
+            <button
+              onClick={() => signOut(() => navigate('/'))}
+              className="flex items-center gap-1.5 text-sm text-[#a78bfa] hover:text-[#ef4444] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#1b0b30]"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </SignedIn>
         </div>
       </div>
     </header>

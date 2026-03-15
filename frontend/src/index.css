@@ -1,56 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
-  
-  html {
-    scroll-behavior: smooth;
-  }
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply font-sans bg-gray-50 dark:bg-darkbg text-gray-900 dark:text-gray-200 antialiased;
+    @apply font-sans antialiased;
+    background-color: #07020d;
+    color: #e8e0f5;
     margin: 0;
     padding: 0;
   }
+
+  /* Headings default to white */
+  h1, h2, h3, h4, h5, h6 { color: #ffffff; }
+
+  /* Links */
+  a { color: inherit; }
 }
 
 @layer utilities {
+  /* ── Scrollbar ── */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #3e1a72 transparent;
   }
+  .scrollbar-thin::-webkit-scrollbar        { width: 5px; height: 5px; }
+  .scrollbar-thin::-webkit-scrollbar-track  { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb  { background-color: #3e1a72; border-radius: 9999px; }
+  .scrollbar-thin::-webkit-scrollbar-corner { background: transparent; }
 
-  .dark .scrollbar-thin {
-    scrollbar-color: #374151 transparent;
-  }
+  /* ── Purple glow helpers ── */
+  .glow-purple { box-shadow: 0 0 20px rgba(147, 51, 234, 0.35); }
+  .glow-blue   { box-shadow: 0 0 20px rgba(58, 134, 255, 0.35); }
 
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* ── Glass card ── */
+  .glass-card {
+    background: linear-gradient(135deg, #160a26 0%, #0d0517 100%);
+    border: 1px solid #2d1b4e;
+    border-radius: 24px;
   }
+  .glass-card:hover { border-color: rgba(124, 58, 237, 0.5); }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 9999px;
-  }
-
-  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #374151;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-corner {
-    background: transparent;
-  }
+  /* ── Purple surface used in sidebar / panels ── */
+  .surface { background-color: #0d0517; }
+  .surface-2 { background-color: #160a26; }
+  .border-subtle { border-color: #2d1b4e; }
 }
 
-input[type="checkbox"] {
-  accent-color: #2563eb;
-}
+/* ── Checkbox accent ── */
+input[type="checkbox"] { accent-color: #7c3aed; }
+
+/* ── Selection colour ── */
+::selection { background: #7c3aed; color: #fff; }

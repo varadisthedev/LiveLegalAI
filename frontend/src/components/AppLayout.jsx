@@ -27,12 +27,12 @@ export default function AppLayout({ children }) {
   }, [darkMode]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-darkbg text-gray-900 dark:text-gray-200 overflow-hidden font-sans transition-colors duration-200">
+    <div className="flex h-screen bg-[#07020d] text-[#e8e0f5] overflow-hidden font-sans">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header & Global Actions */}
-        <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-darkborder lg:justify-end bg-white dark:bg-darkbg z-10">
+        <header className="flex items-center justify-between px-6 py-3 border-b border-[#2d1b4e] lg:justify-end bg-[#0d0517] z-10">
           <button 
             className="lg:hidden text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             onClick={() => setSidebarOpen(true)}

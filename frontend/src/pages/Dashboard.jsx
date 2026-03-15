@@ -26,30 +26,30 @@ const typeColors = {
 };
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Guard: only run after Clerk finishes loading
+    if (!isLoaded) return;
     const fetchHistory = async () => {
       try {
-        const res = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/document/history', {
-          headers: { 'x-user-id': user?.id || 'user_12345' }
-        });
+        const res = await fetch(
+          (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app') + '/api/document/history',
+          { headers: { 'x-user-id': user?.id || 'anonymous' } }
+        );
         const data = await res.json();
-        if (data.success) {
-          setDocuments(data.data);
-        }
+        if (data.success) setDocuments(data.data);
       } catch (err) {
         console.error('Failed to fetch dashboard history:', err);
       } finally {
         setLoading(false);
       }
     };
-    if (user) {
-      fetchHistory();
-    }
-  }, [user]);
+    fetchHistory();
+  // user?.id is a stable string — prevents runaway polling
+  }, [isLoaded, user?.id]);
 
   const highRiskCount = documents.filter(d => d.riskLevel === 'High').length || 0;
   const analyzedToday = documents.filter(d => {

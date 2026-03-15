@@ -1,5 +1,5 @@
-import { ChevronRight, Share2, Download, RefreshCw, AlertTriangle, AlertCircle, Info, Copy, Edit2, Zap, FileText, FileSearch, ArrowRight } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
+import { ChevronRight, Download, RefreshCw, AlertTriangle, AlertCircle, Info, Copy, Edit2, Zap, FileText, FileSearch } from 'lucide-react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import html2canvas from 'html2canvas';
@@ -14,36 +14,55 @@ export default function DocumentAnalysis() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isLoaded: clerkLoaded } = useUser();
 
-  useEffect(() => {
-    const analyzeDoc = async () => {
-      try {
-        const res = await fetch((import.meta.env.VITE_BACKEND_URL || "https://livelegal-backend.up.railway.app") + '/api/chat/analyze', {
+  const analyzeDoc = useCallback(async () => {
+    if (!documentId) return;
+    setLoading(true);
+    setError('');
+
+    // 30-second hard timeout so spinner never hangs forever
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const res = await fetch(
+        (import.meta.env.VITE_BACKEND_URL || 'https://livelegal-backend.up.railway.app') + '/api/chat/analyze',
+        {
           method: 'POST',
+          signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user?.id || 'user_12345'
+            'x-user-id': user?.id || 'anonymous',
           },
-          body: JSON.stringify({ document_id: documentId })
-        });
-        const data = await res.json();
-        
-        if (data.success && data.data) {
-          setAnalysis(data.data);
-        } else {
-          setError(data.error || 'Failed to analyze document');
+          body: JSON.stringify({ document_id: documentId }),
         }
-      } catch (err) {
-        setError('Error connecting to analysis server');
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
+      clearTimeout(timeout);
 
-    if (user && documentId) {
-      analyzeDoc();
+      const data = await res.json();
+      if (data.success && data.data) {
+        setAnalysis(data.data);
+      } else {
+        setError(data.error || 'Failed to analyse document. Please try again.');
+      }
+    } catch (err) {
+      clearTimeout(timeout);
+      if (err.name === 'AbortError') {
+        setError('Analysis timed out after 30 seconds. The server may be busy — please retry.');
+      } else {
+        setError('Could not reach the analysis server. Check your connection and retry.');
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [user, documentId]);
+  }, [documentId, user?.id]);
+
+  useEffect(() => {
+    // Wait until Clerk has finished loading so user?.id is reliable
+    if (!clerkLoaded) return;
+    analyzeDoc();
+  }, [clerkLoaded, analyzeDoc]);
 
   const handleDownloadSnapshot = async () => {
     if (!contentRef.current) return;
@@ -90,13 +109,20 @@ export default function DocumentAnalysis() {
       {/* Title & Metadata */}
       {loading ? (
         <div className="py-20 text-center">
-          <RefreshCw size={32} className="animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-500">Analyzing document...</p>
+          <RefreshCw size={36} className="animate-spin text-[#9333ea] mx-auto mb-5" />
+          <p className="text-[#a78bfa] font-medium">Analysing your legal document…</p>
+          <p className="text-sm text-[#6b21a8] mt-1">This usually takes 10–20 seconds</p>
         </div>
       ) : error ? (
         <div className="py-20 text-center">
-          <AlertCircle size={32} className="text-red-500 mx-auto mb-4" />
-          <p className="text-red-500">{error}</p>
+          <AlertCircle size={36} className="text-red-400 mx-auto mb-4" />
+          <p className="text-red-400 font-medium mb-2">{error}</p>
+          <button
+            onClick={analyzeDoc}
+            className="mt-4 inline-flex items-center gap-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold px-6 py-2.5 rounded-full transition-all"
+          >
+            <RefreshCw size={14} /> Retry Analysis
+          </button>
         </div>
       ) : analysis ? (
       <div ref={contentRef} className="px-1">
