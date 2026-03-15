@@ -9,14 +9,19 @@ import { apiUrl } from '../services/api';
 export default function DocumentAnalysis() {
   const { documentId } = useParams();
   const navigate = useNavigate();
-  // Single useUser() call — isLoaded is true once Clerk has finished initialising
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const contentRef = useRef(null);
-  const hasFiredRef = useRef(false); // Prevent double-fire in StrictMode
+  const hasFiredRef = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Resolve userId: Clerk user takes priority, sessionStorage (set at upload) is the
+  // immediate fallback — avoids spinner when Clerk is slow to re-initialise after navigation.
+  const getUserId = useCallback(() => {
+    return user?.id || sessionStorage.getItem('ll_user_id') || 'anonymous';
+  }, [user?.id]);
 
   const analyzeDoc = useCallback(async () => {
     if (!documentId) return;
@@ -24,10 +29,10 @@ export default function DocumentAnalysis() {
     setError('');
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout
+    const timeout = setTimeout(() => controller.abort(), 45000);
 
     try {
-      const userId = user?.id || 'anonymous';
+      const userId = getUserId();
       console.log('[DocumentAnalysis] Calling /api/chat/analyze', { documentId, userId });
 
       const res = await fetch(
@@ -44,16 +49,15 @@ export default function DocumentAnalysis() {
       );
       clearTimeout(timeout);
 
-      // Check HTTP status before parsing JSON
       if (!res.ok) {
         const text = await res.text();
-        console.error('[DocumentAnalysis] HTTP error:', res.status, text.slice(0, 200));
-        setError(`Server returned ${res.status}. Please retry.`);
+        console.error('[DocumentAnalysis] HTTP error:', res.status, text.slice(0, 300));
+        setError(`Server error (${res.status}). Please retry.`);
         return;
       }
 
       const data = await res.json();
-      console.log('[DocumentAnalysis] Response:', data.success, Object.keys(data));
+      console.log('[DocumentAnalysis] Response success:', data.success);
 
       if (data.success && data.data) {
         setAnalysis(data.data);
@@ -62,7 +66,7 @@ export default function DocumentAnalysis() {
       }
     } catch (err) {
       clearTimeout(timeout);
-      console.error('[DocumentAnalysis] Fetch error:', err);
+      console.error('[DocumentAnalysis] Fetch error:', err.name, err.message);
       if (err.name === 'AbortError') {
         setError('Analysis timed out (45s). The AI may be busy — please retry.');
       } else {
@@ -71,15 +75,16 @@ export default function DocumentAnalysis() {
     } finally {
       setLoading(false);
     }
-  }, [documentId, user?.id]); // eslint-disable-line
+  }, [documentId, getUserId]);
 
   useEffect(() => {
-    if (!isLoaded) return;           // Clerk still initialising
-    if (!documentId) return;         // No doc ID in URL
-    if (hasFiredRef.current) return; // Already fired (StrictMode guard)
+    // Fire immediately on mount — don't wait for Clerk.
+    // sessionStorage has the userId from the upload step.
+    if (!documentId) return;
+    if (hasFiredRef.current) return;
     hasFiredRef.current = true;
     analyzeDoc();
-  }, [isLoaded, documentId, analyzeDoc]);
+  }, [documentId, analyzeDoc]);
 
   const handleDownloadSnapshot = async () => {
     if (!contentRef.current) return;

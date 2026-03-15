@@ -55,13 +55,16 @@ export default function UploadBox({ onUploadComplete }) {
 
     try {
       const formData = new FormData();
-      formData.append('document', file); // API expects 'document' field name
+      formData.append('document', file);
+
+      // Cache the userId so the analysis page can use it immediately
+      // without waiting for Clerk to re-initialise after navigation
+      const userId = user?.id || 'anonymous';
+      sessionStorage.setItem('ll_user_id', userId);
 
       const response = await fetch(apiUrl('/api/document/upload'), {
         method: 'POST',
-        headers: {
-          'x-user-id': user?.id || 'user_12345'
-        },
+        headers: { 'x-user-id': userId },
         body: formData
       });
 
