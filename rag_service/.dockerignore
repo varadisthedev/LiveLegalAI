@@ -1,0 +1,9 @@
+venv/
+.venv/
+__pycache__/
+.git/
+.env
+uploaded_files/
+faiss_indexes/
+*.pyc
+*.log
