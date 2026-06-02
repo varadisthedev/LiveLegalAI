@@ -3,6 +3,7 @@ import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import SSOCallback from './pages/SSOCallback';
 import Verify from './pages/Verify';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
@@ -32,6 +33,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/verify" element={<Verify />} />
+
+        {/* Clerk OAuth SSO callback — must be public, no auth guard */}
+        <Route path="/sso-callback" element={<SSOCallback />} />
 
         {/* Dashboard & App Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
