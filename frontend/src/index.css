@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,51 +10,82 @@
   html { scroll-behavior: smooth; }
 
   body {
-    @apply font-sans antialiased;
-    background-color: #07020d;
-    color: #e8e0f5;
+    @apply antialiased;
+    font-family: 'Hanken Grotesk', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(0, 219, 233, 0.12), transparent 30%),
+      radial-gradient(circle at top right, rgba(119, 1, 208, 0.22), transparent 32%),
+      linear-gradient(180deg, #0b0d1e 0%, #101224 100%);
+    color: #e1e0fa;
     margin: 0;
     padding: 0;
   }
 
-  /* Headings default to white */
-  h1, h2, h3, h4, h5, h6 { color: #ffffff; }
+  h1, h2, h3, h4, h5, h6 {
+    color: #f7f4ff;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  code, pre, kbd, samp {
+    font-family: 'JetBrains Mono', monospace;
+  }
 
   /* Links */
   a { color: inherit; }
 }
 
 @layer utilities {
+  .font-display { font-family: 'Space Grotesk', sans-serif; }
+  .font-body { font-family: 'Hanken Grotesk', sans-serif; }
+  .font-metrics { font-family: 'JetBrains Mono', monospace; }
+
+  .theme-shell {
+    background:
+      radial-gradient(circle at top left, rgba(0, 219, 233, 0.10), transparent 28%),
+      radial-gradient(circle at top right, rgba(119, 1, 208, 0.18), transparent 32%),
+      linear-gradient(180deg, #0b0d1e 0%, #101224 100%);
+  }
+
+  .glass-card {
+    background: rgba(25, 26, 44, 0.72);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 40px rgba(5, 8, 22, 0.35);
+  }
+
+  .glass-card-strong {
+    background: linear-gradient(180deg, rgba(39, 40, 60, 0.92), rgba(25, 26, 44, 0.92));
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 24px 60px rgba(5, 8, 22, 0.42);
+  }
+
+  .surface-frame {
+    background: rgba(16, 18, 36, 0.72);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
   /* ── Scrollbar ── */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #3e1a72 transparent;
+    scrollbar-color: #00dbe9 transparent;
   }
   .scrollbar-thin::-webkit-scrollbar        { width: 5px; height: 5px; }
   .scrollbar-thin::-webkit-scrollbar-track  { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb  { background-color: #3e1a72; border-radius: 9999px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb  { background-color: #00dbe9; border-radius: 9999px; }
   .scrollbar-thin::-webkit-scrollbar-corner { background: transparent; }
 
-  /* ── Purple glow helpers ── */
-  .glow-purple { box-shadow: 0 0 20px rgba(147, 51, 234, 0.35); }
-  .glow-blue   { box-shadow: 0 0 20px rgba(58, 134, 255, 0.35); }
+  .glow-cyan { box-shadow: 0 0 20px rgba(0, 219, 233, 0.22); }
+  .glow-violet { box-shadow: 0 0 20px rgba(119, 1, 208, 0.28); }
 
-  /* ── Glass card ── */
-  .glass-card {
-    background: linear-gradient(135deg, #160a26 0%, #0d0517 100%);
-    border: 1px solid #2d1b4e;
-    border-radius: 24px;
-  }
-  .glass-card:hover { border-color: rgba(124, 58, 237, 0.5); }
-
-  /* ── Purple surface used in sidebar / panels ── */
-  .surface { background-color: #0d0517; }
-  .surface-2 { background-color: #160a26; }
-  .border-subtle { border-color: #2d1b4e; }
+  .surface { background-color: #101224; }
+  .surface-2 { background-color: #191a2c; }
+  .border-subtle { border-color: rgba(255, 255, 255, 0.08); }
 }
 
 /* ── Checkbox accent ── */
-input[type="checkbox"] { accent-color: #7c3aed; }
+input[type="checkbox"] { accent-color: #00dbe9; }
 
 /* ── Selection colour ── */
-::selection { background: #7c3aed; color: #fff; }
+::selection { background: #00dbe9; color: #002022; }

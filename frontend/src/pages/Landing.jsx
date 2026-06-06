@@ -18,7 +18,7 @@ const features = [
   {
     icon: FileText,
     title: 'Plain-Language Summary',
-    desc: "We strip away the legal jargon and give you a clear, human summary of exactly what the document says and what it means for you.",
+    desc: 'We strip away the legal jargon and give you a clear, human summary of exactly what the document says and what it means for you.',
     color: '#3A86FF',
   },
   {

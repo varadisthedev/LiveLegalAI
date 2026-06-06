@@ -4,14 +4,17 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ChatWidget from './ChatWidget';
 
-export default function AppLayout({ children }) {
+export default function AppLayout({ children, title }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage or system preference on mount
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || 
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      return (
+        localStorage.getItem('theme') === 'dark' ||
+        (!localStorage.getItem('theme') &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches)
+      );
     }
     return true; // Default dark
   });
@@ -26,24 +29,35 @@ export default function AppLayout({ children }) {
     }
   }, [darkMode]);
 
+  useEffect(() => {
+    if (title) {
+      document.title = `LiveLegal AI • ${title}`;
+    }
+  }, [title]);
+
   return (
-    <div className="flex h-screen bg-[#07020d] text-[#e8e0f5] overflow-hidden font-sans">
+    <div className="relative flex h-screen overflow-hidden theme-shell text-[#e1e0fa] font-body">
+      <div className="pointer-events-none absolute inset-0 opacity-70">
+        <div className="absolute left-[-8rem] top-[-8rem] h-64 w-64 rounded-full bg-[#00dbe9]/10 blur-3xl" />
+        <div className="absolute right-[-6rem] top-24 h-72 w-72 rounded-full bg-[#7701d0]/12 blur-3xl" />
+        <div className="absolute bottom-[-5rem] left-1/3 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
+      </div>
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-      
-      <div className="flex-1 flex flex-col min-w-0">
+
+      <div className="relative z-10 flex-1 flex flex-col min-w-0">
         {/* Mobile Header & Global Actions */}
-        <header className="flex items-center justify-between px-6 py-3 border-b border-[#2d1b4e] lg:justify-end bg-[#0d0517] z-10">
-          <button 
-            className="lg:hidden text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        <header className="surface-frame flex items-center justify-between px-4 sm:px-6 py-3 lg:justify-end border-x-0 border-t-0 z-10">
+          <button
+            className="lg:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg border border-white/10 bg-white/5 text-[#b9cacb] hover:text-white hover:border-[#00dbe9]/40 hover:bg-[#00dbe9]/10 transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={24} />
           </button>
-          
+
           {/* Theme Toggle Button */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-full bg-gray-100 dark:bg-[#151822] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-[#1F2937] transition-colors"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-white/5 text-[#b9cacb] border border-white/10 hover:text-white hover:border-[#00dbe9]/40 hover:bg-[#00dbe9]/10 transition-colors"
             aria-label="Toggle theme"
           >
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -51,7 +65,7 @@ export default function AppLayout({ children }) {
         </header>
 
         <main className="flex-1 overflow-y-auto w-full relative">
-          <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-8 h-full">
+          <div className="max-w-[1440px] mx-auto p-4 sm:p-6 md:p-8 h-full">
             {children}
           </div>
           {location.pathname !== '/dashboard' && <ChatWidget />}

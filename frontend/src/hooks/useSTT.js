@@ -7,13 +7,14 @@ export function useSTT(language = 'en-US') {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(null);
-  
+
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     // Initialize SpeechRecognition if available
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
@@ -36,14 +37,13 @@ export function useSTT(language = 'en-US') {
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        
-        // We only care about the most recent/final text generally, 
+
+        // We only care about the most recent/final text generally,
         // but for a fluid UI, interim is good.
         setTranscript(finalTranscript || interimTranscript);
       };
 
       recognition.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
         if (event.error !== 'no-speech') {
           setError(event.error);
         }
@@ -54,7 +54,7 @@ export function useSTT(language = 'en-US') {
         setIsListening(false);
       };
     } else {
-      setError("Speech recognition not supported in this browser.");
+      setError('Speech recognition not supported in this browser.');
     }
 
     return () => {
@@ -77,7 +77,7 @@ export function useSTT(language = 'en-US') {
       try {
         recognitionRef.current.start();
       } catch (e) {
-        console.error(e);
+        // ignore start errors (already listening or unsupported)
       }
     }
   }, [isListening]);
@@ -94,6 +94,6 @@ export function useSTT(language = 'en-US') {
     startListening,
     stopListening,
     error,
-    hasSupport: !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    hasSupport: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
   };
 }

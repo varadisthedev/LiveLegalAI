@@ -26,7 +26,9 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
@@ -38,22 +40,92 @@ function App() {
         <Route path="/sso-callback" element={<SSOCallback />} />
 
         {/* Dashboard & App Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/voice-settings" element={<ProtectedRoute><VoiceSettings /></ProtectedRoute>} />
-        
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute>
+              <Upload />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/voice-settings"
+          element={
+            <ProtectedRoute>
+              <VoiceSettings />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Dynamic App Routes */}
-        <Route path="/analysis/:documentId" element={<ProtectedRoute><DocumentAnalysis /></ProtectedRoute>} />
-        <Route path="/analysis" element={<ProtectedRoute><DocumentAnalysis /></ProtectedRoute>} />
-        
-        <Route path="/chat/:id?" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-        <Route path="/active-chat/:id?" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-        <Route path="/active-chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+        <Route
+          path="/analysis/:documentId"
+          element={
+            <ProtectedRoute>
+              <DocumentAnalysis />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analysis"
+          element={
+            <ProtectedRoute>
+              <DocumentAnalysis />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat/:id?"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/active-chat/:id?"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/active-chat"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/history" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
