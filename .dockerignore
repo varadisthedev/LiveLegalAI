@@ -1,0 +1,28 @@
+# Version Control
+.git/
+.gitignore
+
+# Dependencies (these will be reinstalled in containers)
+**/node_modules/
+**/.venv/
+**/venv/
+rag_service/.venv/
+rag_service/__pycache__/
+
+# Environment files
+.env
+.env.*
+*.local
+
+# IDE
+.vscode/
+.idea/
+
+# Build outputs
+**/dist/
+**/build/
+**/.next/
+
+# Logs
+*.log
+npm-debug.log*
