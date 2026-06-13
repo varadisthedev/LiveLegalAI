@@ -1,6 +1,5 @@
 const { analyzeDocument, chatWithDocument } = require('../services/ragProxyService');
 const { saveChatHistory, getChatHistoryByUser } = require('../repositories/chatRepository');
-const { saveAnalytics } = require('../repositories/analyticsRepository');
 const Document = require('../models/Document');
 const { formatResponse } = require('../utils/responseFormatter');
 const logger = require('../utils/logger');
@@ -35,19 +34,6 @@ const analyzeDoc = async (req, res, next) => {
       docMongo.riskLevel = result.risk_level;
       docMongo.riskFactors = result.risk_factors || [];
       await docMongo.save();
-
-      // 4. Save structured BI data to Snowflake 
-      saveAnalytics({
-        documentId: document_id,
-        documentType: result.document_type,
-        legalCategory: docMongo.documentType, // Mapping document_type -> legalCategory roughly for Snowflake columns
-        severityScore: result.severity_score,
-        riskLevel: result.risk_level,
-        riskFactors: result.risk_factors,
-        userId: userId,
-        filename: docMongo.originalName || 'unknown',
-        numChunks: docMongo.numChunks
-      }).catch(err => logger.error(`Snowflake analytics write failed: ${err.message}`));
     }
 
     // 5. Save as a chat record in MongoDB for user history

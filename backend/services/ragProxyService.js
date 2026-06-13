@@ -8,15 +8,15 @@ const RAG_BASE_URL = RAW_URL.endsWith('/') ? RAW_URL.slice(0, -1) : RAW_URL;
 
 /**
  * Proxy: Upload and ingest a document into the RAG microservice
- * @param {string} filePath - Local path to the uploaded file
+ * @param {Buffer} fileBuffer - File buffer from multer memoryStorage
  * @param {string} originalName - Original file name
  * @returns {Promise<{document_id, filename, num_chunks, message}>}
  */
-const ingestDocument = async (filePath, originalName) => {
+const ingestDocument = async (fileBuffer, originalName) => {
   logger.info(`Ingesting document: ${originalName} to RAG service`);
 
   const form = new FormData();
-  form.append('file', fs.createReadStream(filePath), originalName);
+  form.append('file', fileBuffer, { filename: originalName });
 
   const response = await fetch(`${RAG_BASE_URL}/ingest`, {
     method: 'POST',

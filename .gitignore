@@ -177,3 +177,21 @@ temp/
 *.zip
 *.tar.gz
 *.rar
+
+
+# Python
+rag_service/.venv/
+rag_service/__pycache__/
+rag_service/*.pyc
+
+# Node
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files
+.env
+*.local
+
+# IDE
+.vscode/
+.idea/

@@ -1,22 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 
-// Set storage engine to hold file locally in 'uploads' folder briefly
-// In a highly parallel production environment, we should stream to S3, but per requirements we'll hold it locally or in memory
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const fs = require('fs');
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)){
-        fs.mkdirSync(uploadDir);
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 // Check File Type
 function checkFileType(file, cb) {

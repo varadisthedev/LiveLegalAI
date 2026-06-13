@@ -6,7 +6,6 @@ const {
 } = require("../repositories/documentRepository");
 const { formatResponse } = require("../utils/responseFormatter");
 const logger = require("../utils/logger");
-const fs = require("fs");
 const cloudinary = require("../config/cloudinary");
 const PDFDocument = require("pdfkit");
 const Chat = require("../models/Chat");
@@ -30,27 +29,37 @@ const uploadDocument = async (req, res, next) => {
         );
     }
 
-    const { path: filePath, originalname, filename } = req.file;
+    const { buffer: fileBuffer, originalname } = req.file;
 
     // 1. Send file to external RAG FastAPI service for ingestion
-    const ragResult = await ingestDocument(filePath, originalname);
+    const ragResult = await ingestDocument(fileBuffer, originalname);
 
     // 2. Upload the original file to Cloudinary and save the secure URL
     let cloudRes = null;
     try {
-      cloudRes = await cloudinary.uploader.upload(filePath, {
-        folder: "livelegalai/documents",
-        public_id: ragResult.document_id,
-        resource_type: "auto",
+      cloudRes = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "livelegalai/documents",
+            public_id: ragResult.document_id,
+            resource_type: "auto",
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(fileBuffer);
       });
     } catch (err) {
-      logger.warn(`Cloudinary upload failed: ${err.message}`);
+      logger.error(`Cloudinary upload failed: ${err.message}`);
+      throw new Error(`Cloudinary upload failed: ${err.message}`);
     }
 
     const docRecord = new Document({
       userId,
-      fileUrl: cloudRes?.secure_url || filename,
-      cloudinaryPublicId: cloudRes?.public_id || "",
+      fileUrl: cloudRes.secure_url,
+      cloudinaryPublicId: cloudRes.public_id || "",
       originalName: originalname,
       documentId: ragResult.document_id, // RAG microservice ID
       numChunks: ragResult.num_chunks,
@@ -75,14 +84,6 @@ const uploadDocument = async (req, res, next) => {
     );
   } catch (error) {
     next(error);
-  } finally {
-    // Attempt to clean up the local temp upload since RAG has processed it
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlink(req.file.path, (err) => {
-        if (err)
-          logger.warn(`Could not delete temp file ${req.file.path}: ${err}`);
-      });
-    }
   }
 };
 

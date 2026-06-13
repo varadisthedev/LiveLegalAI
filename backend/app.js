@@ -20,6 +20,10 @@ app.set("trust proxy", 1);
 
 // Middlewares
 app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan("combined"));
+app.use(globalLimiter);
 app.use(
   cors({
     origin: "*",
@@ -27,14 +31,6 @@ app.use(
     allowedHeaders: ["Content-Type", "x-user-id", "Authorization"],
   }),
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan("combined"));
-app.use(globalLimiter);
-
-// Serve uploads statically if needed (for user to view uploaded image later)
-app.use("/uploads", express.static("uploads"));
-
 // API Routes
 app.use("/api/document", documentRoutes);
 app.use("/api/chat", chatRoutes);
