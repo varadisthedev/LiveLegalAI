@@ -14,6 +14,12 @@ load_dotenv()
 
 
 # ---------------------------------------------------------------------------
+# Anthropic Claude
+# ---------------------------------------------------------------------------
+ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
+CLAUDE_MODEL: str = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+
+# ---------------------------------------------------------------------------
 # Google Gemini
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
@@ -24,6 +30,7 @@ GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 # OpenAI (used for embeddings if USE_OPENAI_EMBEDDINGS=true)
 # ---------------------------------------------------------------------------
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 USE_OPENAI_EMBEDDINGS: bool = os.getenv("USE_OPENAI_EMBEDDINGS", "false").lower() == "true"
 OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 

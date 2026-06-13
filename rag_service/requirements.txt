@@ -44,6 +44,7 @@ numpy>=1.26.4                # Required by FAISS and embeddings
 # LLM — Google Gemini
 # ---------------------------------------------------------------------------
 google-generativeai==0.8.3
+anthropic>=0.18.0
 
 # ---------------------------------------------------------------------------
 # Dev / testing utilities

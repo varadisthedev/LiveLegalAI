@@ -24,9 +24,7 @@ PIPELINE FUNCTIONS
   run_chat_pipeline(document_id, question)               →  ChatResponse
 """
 
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
-from config import GEMINI_API_KEY, GEMINI_MODEL
+from core.llm_provider import call_llm
 from core.document_parser import parse_document
 from core.text_cleaner import clean_text
 from core.chunker import split_into_chunks
@@ -39,69 +37,6 @@ from models.response_models import IngestResponse, AnalyzeResponse, ChatResponse
 from logger import get_logger
 
 logger = get_logger(__name__)
-
-# ---------------------------------------------------------------------------
-# Initialise Gemini client once at module level (not per-request).
-# google-generativeai uses a global configure() call, then model instances.
-# ---------------------------------------------------------------------------
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Gemini model instance — reused across all requests
-_gemini_model = genai.GenerativeModel(
-    model_name=GEMINI_MODEL,
-    # Safety settings use enum values — required by google-generativeai v0.8.x
-    # (plain strings like 'DANGEROUS_CONTENT' cause a KeyError in this version)
-    safety_settings={
-        HarmCategory.HARM_CATEGORY_HARASSMENT:        HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH:       HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-    },
-)
-
-logger.info(f"Gemini model initialised: {GEMINI_MODEL}")
-
-
-def _call_gemini(system_prompt: str, user_prompt: str, max_tokens: int = 1500) -> str:
-    """
-    Send a prompt to Gemini and return the text response.
-
-    Gemini's SDK combines system + user prompts differently from Claude:
-      - We prefix the system instructions into the user message since
-        GenerativeModel.generate_content() takes a single prompt string.
-      - Alternatively we use system_instruction= (supported in Gemini 1.5+).
-
-    Args:
-        system_prompt : Instructions for how Gemini should behave.
-        user_prompt   : The actual request / question with document context.
-        max_tokens    : Maximum output token budget.
-
-    Returns:
-        The generated text string.
-
-    Raises:
-        RuntimeError: If Gemini returns no content.
-    """
-    response = _gemini_model.generate_content(
-        # Combine system + user into one prompt (cleanest cross-version approach)
-        f"{system_prompt}\n\n{user_prompt}",
-        generation_config=genai.types.GenerationConfig(
-            max_output_tokens=max_tokens,
-            temperature=0.3,   # Low temperature for factual legal responses
-        ),
-    )
-
-    # Gemini response structure: response.text (shortcut) or response.candidates[0]
-    if not response.candidates:
-        raise RuntimeError(
-            "Gemini returned no candidates. The prompt may have been blocked by safety filters."
-        )
-
-    text = response.text
-    if not text:
-        raise RuntimeError("Gemini returned an empty response text.")
-
-    return text
 
 
 # ===========================================================================
@@ -206,8 +141,8 @@ def run_analyze_pipeline(document_id: str, query: str) -> AnalyzeResponse:
         + (f"Risk factors detected: {', '.join(triggered_rules)}." if triggered_rules else "No major risk factors detected.")
     )
 
-    # Step 3: Call Gemini for structured analysis
-    logger.info("Step 3/3 — Sending context to Gemini for analysis")
+    # Step 3: Call LLM for structured analysis
+    logger.info("Step 3/3 — Sending context to LLM for analysis")
 
     system_prompt = (
         "You are a legal assistant helping ordinary people understand legal documents.\n"
@@ -238,10 +173,10 @@ Provide a practical suggested action or draft reply the recipient could take. Be
 Additional context: {severity_explanation}
 """
 
-    full_response = _call_gemini(system_prompt, user_prompt, max_tokens=1500)
-    logger.debug(f"Gemini raw response length: {len(full_response)} characters")
+    full_response = call_llm(system_prompt, user_prompt, max_tokens=1500)
+    logger.debug(f"LLM raw response length: {len(full_response)} characters")
 
-    # Parse the three sections from Gemini's structured response
+    # Parse the three sections from LLM's structured response
     summary, explanation, suggested_reply = _parse_analyze_response(full_response)
 
     # Build structured risk factors for frontend graph
@@ -266,7 +201,7 @@ Additional context: {severity_explanation}
 
 def _parse_analyze_response(text: str) -> tuple:
     """
-    Parse Gemini's three-section analysis response.
+    Parse LLM's three-section analysis response.
 
     Looks for SUMMARY:, EXPLANATION:, and SUGGESTED REPLY: labels.
     Falls back gracefully if the model doesn't follow the exact format.
@@ -289,7 +224,7 @@ def _parse_analyze_response(text: str) -> tuple:
     suggested_reply = extract_section("SUGGESTED REPLY", ["SUMMARY",   "EXPLANATION"],     text)
 
     if not summary and not explanation and not suggested_reply:
-        logger.warning("Could not parse structured sections from Gemini response — returning raw text as summary")
+        logger.warning("Could not parse structured sections from LLM response — returning raw text as summary")
         return text, "See summary above.", "Please consult a qualified legal professional."
 
     return (
@@ -328,8 +263,8 @@ def run_chat_pipeline(document_id: str, question: str) -> ChatResponse:
     chunks = retrieve_top_chunks(document_id, question)
     context = format_context(chunks)
 
-    # Step 2: Build and send Gemini prompt
-    logger.info("Step 2/2 — Sending context + question to Gemini")
+    # Step 2: Build and send LLM prompt
+    logger.info("Step 2/2 — Sending context + question to LLM")
 
     system_prompt = (
         "You are a legal document assistant.\n"
@@ -353,13 +288,13 @@ QUESTION: {question}
 Answer the question concisely and clearly. If the information is not present in the excerpts, say so.
 """
 
-    answer = _call_gemini(system_prompt, user_prompt, max_tokens=800)
+    answer = call_llm(system_prompt, user_prompt, max_tokens=800)
     answer = answer.strip()
 
     # Build context snippets so frontend can show "source references"
     context_snippets = [chunk[:200] + ("..." if len(chunk) > 200 else "") for chunk in chunks]
 
-    logger.info(f"Gemini answer generated — {len(answer)} characters")
+    logger.info(f"LLM answer generated — {len(answer)} characters")
     logger.info(f"===== CHAT PIPELINE COMPLETE =====")
 
     return ChatResponse(
