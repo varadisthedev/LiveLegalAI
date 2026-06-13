@@ -20,15 +20,10 @@ process.on("uncaughtException", (err) => {
 
 connectDB();
 
-// Start scheduled cleanup for old documents
-try {
-  const { scheduleDailyPurge } = require("./utils/cleanup");
-  scheduleDailyPurge();
-} catch (err) {
-  logger.warn(`Failed to start cleanup scheduler: ${err.message}`);
-}
+
 
 app.listen(PORT, () => {
+  console.clear();
   logger.info(
     `Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
   );
