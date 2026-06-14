@@ -51,17 +51,21 @@ router = APIRouter()
     ),
     tags=["Documents"],
 )
-async def ingest_document(file: UploadFile = File(...)):
+async def ingest_document(
+    file: UploadFile = File(...),
+    document_id: str = Form(None)
+):
     """
     POST /ingest
 
     multipart/form-data:
       file: PDF or DOCX document
+      document_id?: string (optional custom document ID)
 
     Returns:
       { document_id, filename, num_chunks, message }
     """
-    logger.info(f"POST /ingest — filename='{file.filename}', content_type='{file.content_type}'")
+    logger.info(f"POST /ingest — filename='{file.filename}', content_type='{file.content_type}', document_id='{document_id}'")
 
     # --- Validation ---
     if not file.filename:
@@ -74,7 +78,8 @@ async def ingest_document(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
     # --- Generate ID and save file ---
-    document_id = generate_document_id()
+    if not document_id or not document_id.strip():
+        document_id = generate_document_id()
     saved_path = None
 
     try:

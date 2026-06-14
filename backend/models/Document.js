@@ -19,7 +19,8 @@ const documentSchema = new mongoose.Schema(
     // --- File info ---
     fileUrl: {
       type: String,
-      required: true,
+      required: false,
+      default: "pending",
     },
     originalName: {
       type: String,
@@ -84,6 +85,24 @@ const documentSchema = new mongoose.Schema(
         category: String,
       },
     ],
+    // --- Progress & Status ---
+    status: {
+      type: String,
+      enum: ["processing", "completed", "failed"],
+      default: "processing",
+    },
+    statusMessage: {
+      type: String,
+      default: "Initializing upload...",
+    },
+    progress: {
+      type: Number,
+      default: 0,
+    },
+    error: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );

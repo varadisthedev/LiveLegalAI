@@ -13,10 +13,10 @@ async function testBackend() {
   console.log(`Mock User ID: ${mockUserId}`);
 
   // Test setup: we use the test document from the RAG folder
-  const testDocPath = path.join(__dirname, '../rag_service/test_copyright_notice.docx');
+  const testDocPath = path.join(__dirname, '../rag_service/test_copyright_notice.pdf');
   if (!fs.existsSync(testDocPath)) {
     console.error(`❌ Test document not found at: ${testDocPath}`);
-    console.log(`Please run 'python test_api.py' in the rag_service folder first to generate it.`);
+    console.log(`Please generate the test document first.`);
     return;
   }
 
@@ -65,7 +65,6 @@ async function testBackend() {
       console.log(`✅ Analysis successful!`);
       console.log(`Severity: ${data.severity_score} (${data.risk_level})`);
       console.log(`Type: ${data.document_type}`);
-      // NOTE: Here Snowflake should have been updated behind the scenes!
     } else {
       console.error(`❌ Analyze failed:`, response.data);
     }

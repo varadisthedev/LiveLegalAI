@@ -8,6 +8,7 @@ const {
   getDocument,
   deleteDocument,
   downloadReport,
+  getDocumentStatus,
 } = require("../controllers/documentController");
 const { heavyOpLimiter } = require("../middleware/rateLimitMiddleware");
 const { validateDocumentUpload } = require("../validators/documentValidator");
@@ -26,6 +27,9 @@ router.post(
 
 // GET /api/document/history
 router.get("/history", getHistory);
+
+// GET /api/document/:documentId/status
+router.get("/:documentId/status", getDocumentStatus);
 
 // GET /api/document/:id
 router.get("/:id", getDocument);

@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
 
 /**
  * Analyze a previously ingested document via the RAG microservice
- * Returns a full AI-generated legal analysis and updates Mongo + Snowflake DBs.
+ * Returns a full AI-generated legal analysis and updates MongoDB.
  */
 const analyzeDoc = async (req, res, next) => {
   try {
@@ -17,14 +17,28 @@ const analyzeDoc = async (req, res, next) => {
       return res.status(400).json(formatResponse(false, null, 'document_id is required.'));
     }
 
-    // 1. Send analysis request to RAG microservice
-    const result = await analyzeDocument(document_id, query);
-
-    // 2. Locate the parent MongoDB Document to update and extract filename
+    // Check if document has already been analyzed to prevent duplicate RAG calls
     const docMongo = await Document.findOne({ documentId: document_id, userId });
     
+    if (docMongo && docMongo.analyzed) {
+      logger.info(`Returning cached analysis for document: ${document_id}`);
+      return res.status(200).json(formatResponse(true, {
+        document_id: docMongo.documentId,
+        summary: docMongo.summary,
+        explanation: docMongo.explanation,
+        suggested_reply: docMongo.suggestedReply,
+        severity_score: docMongo.severityScore,
+        risk_level: docMongo.riskLevel,
+        risk_factors: docMongo.riskFactors,
+        document_type: docMongo.documentType
+      }));
+    }
+
+    // 1. Send analysis request to RAG microservice (fallback)
+    const result = await analyzeDocument(document_id, query);
+
     if (docMongo) {
-      // 3. Update the MongoDB Document with the brilliant analysis from Gemini
+      // 3. Update the MongoDB Document with the analysis
       docMongo.analyzed = true;
       docMongo.documentType = result.document_type || 'Legal Notice';
       docMongo.summary = result.summary;
