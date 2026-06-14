@@ -1,0 +1,655 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "LiveLegal AI - Backend API",
+    "version": "1.0.0",
+    "description": "API documentation for the Express.js Backend of the LiveLegal AI application."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "UserIdHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-user-id",
+        "description": "User identifier header (e.g. test_user_12345)"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "data": {
+            "type": "null",
+            "example": null
+          },
+          "error": {
+            "type": "string",
+            "example": "Unauthorized Component. Missing user identifier."
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "UserIdHeader": []
+    }
+  ],
+  "paths": {
+    "/api/document/upload": {
+      "post": {
+        "summary": "Upload and Ingest Legal Document",
+        "description": "Uploads a PDF or DOCX file, saves its secure URL to Cloudinary, and ingests it into the RAG service.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "document": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF or DOCX document file to analyze"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document uploaded and ingested successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "6a2d9c5875ab73aeaefc277c"
+                        },
+                        "documentId": {
+                          "type": "string",
+                          "example": "doc_cbfc94f3e5e8"
+                        },
+                        "filename": {
+                          "type": "string",
+                          "example": "test_copyright_notice.pdf"
+                        },
+                        "numChunks": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Document processed successfully"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid file or type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing x-user-id header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/history": {
+      "get": {
+        "summary": "Get Document Upload History",
+        "description": "Fetches a list of all documents uploaded by the authenticated user.",
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved document history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string",
+                            "example": "6a2d9c5875ab73aeaefc277c"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "example": "test_user_12345"
+                          },
+                          "fileUrl": {
+                            "type": "string",
+                            "example": "https://res.cloudinary.com/..."
+                          },
+                          "originalName": {
+                            "type": "string",
+                            "example": "test_copyright_notice.pdf"
+                          },
+                          "documentId": {
+                            "type": "string",
+                            "example": "doc_cbfc94f3e5e8"
+                          },
+                          "numChunks": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "documentType": {
+                            "type": "string",
+                            "example": "Copyright / DMCA Strike"
+                          },
+                          "riskLevel": {
+                            "type": "string",
+                            "example": "Moderate"
+                          },
+                          "analyzed": {
+                            "type": "boolean",
+                            "example": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-06-13T18:05:14.884Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/{documentId}/status": {
+      "get": {
+        "summary": "Get Document Upload/Processing Status",
+        "description": "Returns the real-time processing status, percentage progress, and logs of a document being ingested and analyzed.",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Unique RAG document ID (e.g. doc_cbfc94f3e5e8)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "documentId": {
+                          "type": "string",
+                          "example": "doc_cbfc94f3e5e8"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["processing", "completed", "failed"],
+                          "example": "processing"
+                        },
+                        "statusMessage": {
+                          "type": "string",
+                          "example": "Analyzing document clauses and risk scoring..."
+                        },
+                        "progress": {
+                          "type": "integer",
+                          "example": 70
+                        },
+                        "error": {
+                          "type": "string",
+                          "example": ""
+                        },
+                        "originalName": {
+                          "type": "string",
+                          "example": "test_copyright_notice.pdf"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        }
+      }
+    },
+    "/api/document/{id}": {
+      "get": {
+        "summary": "Get Specific Document Details",
+        "description": "Returns full metadata and current processing details for a specific document by its MongoDB ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "MongoDB ID of the document"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string",
+                          "example": "6a2d9c5875ab73aeaefc277c"
+                        },
+                        "originalName": {
+                          "type": "string",
+                          "example": "test_copyright_notice.pdf"
+                        },
+                        "documentId": {
+                          "type": "string",
+                          "example": "doc_cbfc94f3e5e8"
+                        },
+                        "analyzed": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Legal Document",
+        "description": "Deletes a document from MongoDB, associated chat histories, and the original file from Cloudinary.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "MongoDB ID of the document"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Document deleted"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        }
+      }
+    },
+    "/api/document/{id}/report": {
+      "get": {
+        "summary": "Download PDF Analysis Report",
+        "description": "Generates a clean PDF analysis report on-the-fly and downloads it.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "MongoDB ID of the document"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF download successful",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        }
+      }
+    },
+    "/api/chat/analyze": {
+      "post": {
+        "summary": "Analyze Document Severity & Core Information",
+        "description": "Analyzes an ingested document for core obligations, assigns a severity score (0-100), and labels the risk level.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "document_id"
+                ],
+                "properties": {
+                  "document_id": {
+                    "type": "string",
+                    "description": "RAG documentId identifier (e.g. doc_cbfc94f3e5e8)",
+                    "example": "doc_cbfc94f3e5e8"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Analysis complete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "document_id": {
+                          "type": "string",
+                          "example": "doc_cbfc94f3e5e8"
+                        },
+                        "severity_score": {
+                          "type": "integer",
+                          "example": 35
+                        },
+                        "risk_level": {
+                          "type": "string",
+                          "example": "Moderate"
+                        },
+                        "document_type": {
+                          "type": "string",
+                          "example": "Copyright / DMCA Strike"
+                        },
+                        "analysis": {
+                          "type": "string",
+                          "example": "Summary and analysis of key obligations..."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/chat": {
+      "post": {
+        "summary": "Chat with Document",
+        "description": "Asks a specific custom question about the content of the document, grounded strictly in document context chunks.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "document_id",
+                  "question"
+                ],
+                "properties": {
+                  "document_id": {
+                    "type": "string",
+                    "description": "RAG documentId identifier",
+                    "example": "doc_cbfc94f3e5e8"
+                  },
+                  "question": {
+                    "type": "string",
+                    "description": "Your question about the document",
+                    "example": "What is the cease and desist timeline?"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat response received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "document_id": {
+                          "type": "string",
+                          "example": "doc_cbfc94f3e5e8"
+                        },
+                        "question": {
+                          "type": "string",
+                          "example": "What is the cease and desist timeline?"
+                        },
+                        "answer": {
+                          "type": "string",
+                          "example": "According to the document, you must comply within ten (10) days."
+                        },
+                        "sources_used": {
+                          "type": "integer",
+                          "example": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/history": {
+      "get": {
+        "summary": "Get Chat History",
+        "description": "Fetches the full conversation log for the authenticated user.",
+        "responses": {
+          "200": {
+            "description": "Chat history retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string",
+                            "example": "6a2d9c6e75ab73aeaefc278b"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "example": "test_user_12345"
+                          },
+                          "documentId": {
+                            "type": "string",
+                            "example": "doc_cbfc94f3e5e8"
+                          },
+                          "question": {
+                            "type": "string",
+                            "example": "What is the cease and desist timeline?"
+                          },
+                          "answer": {
+                            "type": "string",
+                            "example": "According to the document, you must comply within ten (10) days."
+                          },
+                          "responseType": {
+                            "type": "string",
+                            "example": "rag_chat"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/profile": {
+      "get": {
+        "summary": "Get User Profile Details",
+        "description": "Fetches statistical counters (total uploaded, analyzed, risk metrics) to show in user profile widgets.",
+        "responses": {
+          "200": {
+            "description": "Profile data retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalUploaded": {
+                          "type": "integer",
+                          "example": 10
+                        },
+                        "totalAnalyzed": {
+                          "type": "integer",
+                          "example": 8
+                        },
+                        "highRiskCount": {
+                          "type": "integer",
+                          "example": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
