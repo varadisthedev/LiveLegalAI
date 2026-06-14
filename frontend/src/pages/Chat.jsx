@@ -8,8 +8,6 @@ import {
   Mic,
   Send,
   Bot,
-  Volume2,
-  VolumeX,
   Loader2,
   Sparkles,
   User,
@@ -19,7 +17,6 @@ import {
 import { useParams } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import AppLayout from '../components/AppLayout';
-import { useTTS } from '../hooks/useTTS';
 import { useSTT } from '../hooks/useSTT';
 import { apiUrl } from '../services/api';
 
@@ -111,8 +108,6 @@ export default function Chat() {
   const [documentName, setDocumentName] = useState('Active Document');
   const fileInputRef = useRef(null);
 
-  const { speak, isSpeaking, isMuted, toggleMute, usingFallback, ttsError } =
-    useTTS(language);
   const { isListening, transcript, startListening, stopListening, hasSupport } =
     useSTT(language);
 
@@ -158,13 +153,12 @@ export default function Chat() {
     }
   };
 
-  /** Adds an AI message and speaks it */
+  /** Adds an AI message */
   const addAIMessage = (text, extra = {}) => {
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), sender: 'ai', text, ...extra },
     ]);
-    speak(text);
   };
 
   /** User taps one of the 3 format cards */
@@ -282,36 +276,7 @@ export default function Chat() {
               </div>
             </div>
 
-            {/* Browser fallback badge */}
-            {usingFallback && (
-              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full border border-amber-200 dark:border-amber-500/30 whitespace-nowrap">
-                🔊 Browser Voice
-              </span>
-            )}
-            {/* Voice toggle pill */}
-            <button
-              id="chat-page-voice-toggle"
-              onClick={toggleMute}
-              title={
-                isMuted
-                  ? 'Voice muted — click to enable'
-                  : 'Voice on — click to mute'
-              }
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                isMuted
-                  ? 'bg-gray-100 dark:bg-[#1A1D27] border-gray-200 dark:border-[#1F2937] text-gray-500 dark:text-gray-400 hover:border-amber-400 hover:text-amber-500'
-                  : 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
-              }`}
-            >
-              {isSpeaking && !isMuted ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : isMuted ? (
-                <VolumeX size={14} />
-              ) : (
-                <Volume2 size={14} />
-              )}
-              {isMuted ? 'Voice Off' : 'Voice On'}
-            </button>
+
 
             <Search
               size={18}
@@ -328,23 +293,7 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* ── TTS error banner ── */}
-        {ttsError && (
-          <div className="mb-4 px-4 py-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-sm text-red-600 dark:text-red-400 font-medium">
-            ⚠ Voice error: {ttsError}
-          </div>
-        )}
 
-        {/* ── Muted notice ── */}
-        {isMuted && (
-          <div className="mb-4 px-4 py-2.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl flex items-center gap-2">
-            <VolumeX size={14} className="text-amber-500 flex-shrink-0" />
-            <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-              Voice is muted. Speech is still generated — click{' '}
-              <strong>Voice Off</strong> to hear it.
-            </p>
-          </div>
-        )}
 
         {/* ── Chat / Welcome area ── */}
         <div className="flex-1 overflow-y-auto scrollbar-thin pb-32 pr-2 sm:pr-4">

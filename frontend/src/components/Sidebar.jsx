@@ -7,7 +7,6 @@ import {
   Folder,
   Plus,
   X,
-  Volume2,
   Upload,
   Sparkles,
   LogOut,
@@ -19,7 +18,6 @@ const mainNavItems = [
   { path: '/upload', icon: Upload, label: 'Upload Doc' },
   { path: '/history', icon: History, label: 'Case History' },
   { path: '/settings', icon: Settings, label: 'Settings' },
-  { path: '/voice-settings', icon: Volume2, label: 'Voice Settings' },
 ];
 
 const chatNavItems = [

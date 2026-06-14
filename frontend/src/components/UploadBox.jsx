@@ -13,6 +13,7 @@ export default function UploadBox({ onUploadComplete }) {
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const inputRef = useRef();
   const { user } = useUser();
 
@@ -43,22 +44,15 @@ export default function UploadBox({ onUploadComplete }) {
   const simulateUpload = async () => {
     if (!file) return;
     setUploading(true);
-    setProgress(0);
+    setProgress(5);
+    setStatusMessage('Uploading document...');
     setError('');
-
-    // Simulate progress bar while uploading
-    let p = 0;
-    const progressInterval = setInterval(() => {
-      p += 10;
-      if (p <= 90) setProgress(p);
-    }, 200);
 
     try {
       const formData = new FormData();
       formData.append('document', file);
 
       // Cache the userId so the analysis page can use it immediately
-      // without waiting for Clerk to re-initialise after navigation
       const userId = user?.id || 'anonymous';
       sessionStorage.setItem('ll_user_id', userId);
 
@@ -70,21 +64,52 @@ export default function UploadBox({ onUploadComplete }) {
 
       const result = await response.json();
       
-      clearInterval(progressInterval);
-      setProgress(100);
-
       if (!response.ok || !result.success) {
         throw new Error(result.error || result.message || 'Upload failed');
       }
 
-      setUploaded(true);
-      if (onUploadComplete) onUploadComplete(result.data);
+      const documentId = result.data.documentId;
+
+      // Start polling status
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(apiUrl(`/api/document/${documentId}/status`), {
+            headers: { 'x-user-id': userId }
+          });
+          const statusResult = await statusRes.json();
+
+          if (!statusRes.ok || !statusResult.success) {
+            throw new Error(statusResult.error || 'Failed to check status');
+          }
+
+          const statusData = statusResult.data;
+          setProgress(statusData.progress);
+          setStatusMessage(statusData.statusMessage);
+
+          if (statusData.status === 'completed') {
+            clearInterval(pollInterval);
+            setProgress(100);
+            setUploaded(true);
+            setUploading(false);
+            if (onUploadComplete) onUploadComplete(statusData);
+          } else if (statusData.status === 'failed') {
+            clearInterval(pollInterval);
+            setProgress(0);
+            setUploading(false);
+            setError(statusData.error || 'Processing failed');
+          }
+        } catch (pollErr) {
+          clearInterval(pollInterval);
+          setProgress(0);
+          setUploading(false);
+          setError(pollErr.message || 'Status polling error');
+        }
+      }, 1000);
+
     } catch (err) {
-      clearInterval(progressInterval);
       setProgress(0);
-      setError(err.message || 'Failed to upload document');
-    } finally {
       setUploading(false);
+      setError(err.message || 'Failed to upload document');
     }
   };
 
@@ -182,10 +207,10 @@ export default function UploadBox({ onUploadComplete }) {
       )}
 
       {/* Progress Bar */}
-      {(uploading || uploaded) && (
+          {(uploading || uploaded) && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>{uploaded ? 'Upload complete' : 'Uploading...'}</span>
+            <span>{uploaded ? 'Upload complete' : (statusMessage || 'Uploading...')}</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <div className="h-1.5 bg-gray-100 dark:bg-[#1A1D27] rounded-full overflow-hidden">

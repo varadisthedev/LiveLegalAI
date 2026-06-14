@@ -9,7 +9,7 @@ export default function Navbar() {
   const isLanding = location.pathname === '/';
 
   // Hide on authenticated inner pages (they use sidebar)
-  const hiddenPaths = ['/dashboard', '/upload', '/history', '/chat', '/settings', '/voice-settings', '/document'];
+  const hiddenPaths = ['/dashboard', '/upload', '/history', '/chat', '/settings', '/document'];
   const hideNavbar = hiddenPaths.some(p => location.pathname.startsWith(p));
   if (hideNavbar) return null;
 

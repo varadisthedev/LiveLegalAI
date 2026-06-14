@@ -190,12 +190,6 @@ export default function Dashboard() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/voice-settings"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-[#e1e0fa] transition-colors hover:border-[#00dbe9]/30 hover:bg-[#00dbe9]/10"
-            >
-              <Sparkles size={16} /> Voice Settings
-            </Link>
-            <Link
               to="/settings"
               className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-[#e1e0fa] transition-colors hover:border-[#00dbe9]/30 hover:bg-[#00dbe9]/10"
             >
@@ -394,7 +388,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
+              <div className="mt-6 grid grid-cols-3 gap-3 text-sm text-center">
                 <Link
                   to="/upload"
                   className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#e1e0fa] transition-colors hover:border-[#00dbe9]/30 hover:bg-[#00dbe9]/10"
@@ -412,12 +406,6 @@ export default function Dashboard() {
                   className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#e1e0fa] transition-colors hover:border-[#00dbe9]/30 hover:bg-[#00dbe9]/10"
                 >
                   Settings
-                </Link>
-                <Link
-                  to="/voice-settings"
-                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#e1e0fa] transition-colors hover:border-[#00dbe9]/30 hover:bg-[#00dbe9]/10"
-                >
-                  Voice
                 </Link>
               </div>
             </div>
@@ -442,15 +430,7 @@ export default function Dashboard() {
                     Settings.
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm font-semibold text-[#f7f4ff]">
-                    Voice summary
-                  </p>
-                  <p className="mt-1 text-xs text-[#849495]">
-                    ElevenLabs playback is available in Voice Settings for
-                    document answers.
-                  </p>
-                </div>
+
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <p className="text-sm font-semibold text-[#f7f4ff]">Status</p>
                   <p className="mt-1 text-xs text-[#849495]">

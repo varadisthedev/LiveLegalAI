@@ -7,8 +7,6 @@ import {
   User,
   Paperclip,
   ChevronDown,
-  Volume2,
-  VolumeX,
   Loader2,
   Sparkles,
   Mic,
@@ -18,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import { useTTS } from '../hooks/useTTS';
 import { useSTT } from '../hooks/useSTT';
 import { apiUrl } from '../services/api';
 
@@ -114,8 +111,6 @@ export default function ChatWidget() {
   const [documentName, setDocumentName] = useState('Document');
 
   const messagesEndRef = useRef(null);
-  const { speak, isSpeaking, isMuted, toggleMute, usingFallback, ttsError } =
-    useTTS(language);
   const { isListening, transcript, startListening, stopListening, hasSupport } =
     useSTT(language);
 
@@ -169,13 +164,12 @@ export default function ChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen, isTyping]);
 
-  /** Adds an AI message AND speaks it */
+  /** Adds an AI message */
   const addAIMessage = (text, extra = {}) => {
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), sender: 'ai', text, ...extra },
     ]);
-    speak(text);
   };
 
   /**
@@ -301,11 +295,6 @@ export default function ChatWidget() {
               <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                 Analyzing: {documentName}
               </p>
-              {usingFallback && (
-                <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/30 whitespace-nowrap">
-                  Browser Voice
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -335,32 +324,7 @@ export default function ChatWidget() {
             </div>
           </div>
 
-          {/* Voice toggle */}
-          <button
-            id="chat-widget-voice-toggle"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleMute();
-            }}
-            title={
-              isMuted
-                ? 'Voice muted — click to enable'
-                : 'Voice on — click to mute'
-            }
-            className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${
-              isMuted
-                ? 'text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
-                : 'text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10'
-            }`}
-          >
-            {isSpeaking && !isMuted ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : isMuted ? (
-              <VolumeX size={16} />
-            ) : (
-              <Volume2 size={16} />
-            )}
-          </button>
+
 
           <button
             className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 dark:hover:text-white dark:hover:bg-[#2A3143] transition-colors"
@@ -388,23 +352,7 @@ export default function ChatWidget() {
 
       {!isMinimized && (
         <>
-          {/* ── TTS error banner ── */}
-          {ttsError && (
-            <div className="mx-3 mt-2 px-3 py-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg text-[11px] text-red-600 dark:text-red-400 font-medium">
-              ⚠ Voice error: {ttsError}
-            </div>
-          )}
 
-          {/* ── Muted notice ── */}
-          {isMuted && (
-            <div className="mx-3 mt-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg flex items-center gap-2">
-              <VolumeX size={12} className="text-amber-500 flex-shrink-0" />
-              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                Voice muted — speech is still generated. Tap{' '}
-                <Volume2 size={10} className="inline mx-0.5" /> to hear it.
-              </p>
-            </div>
-          )}
 
           {/* ── Message area ── */}
           <div className="flex-1 overflow-y-auto scrollbar-thin bg-white dark:bg-[#0F111A]">

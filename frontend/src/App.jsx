@@ -11,7 +11,6 @@ import DocumentAnalysis from './pages/DocumentAnalysis';
 import Chat from './pages/Chat';
 import History from './pages/History';
 import Settings from './pages/Settings';
-import VoiceSettings from './pages/VoiceSettings';
 
 const ProtectedRoute = ({ children }) => {
   return (
@@ -72,14 +71,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/voice-settings"
-          element={
-            <ProtectedRoute>
-              <VoiceSettings />
-            </ProtectedRoute>
-          }
-        />
+
 
         {/* Dynamic App Routes */}
         <Route
