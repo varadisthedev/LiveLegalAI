@@ -47,3 +47,9 @@ Where to look:
 - Frontend routes: `frontend/src/app/`; feature code: `frontend/src/features/`
 - Backend controllers: `backend/controllers/`; auth: `backend/controllers/authController.js`, `backend/middleware/authMiddleware.js`
 - RAG core pipeline: `rag_service/core/`
+
+
+## For deployment using a VPS:
+1. git clone the repo, then edit root .env (real domain + email) and each service's .env 
+2. Point the domain's DNS A record at the VPS IP.
+3. docker compose up -d --build
