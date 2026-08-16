@@ -1,0 +1,72 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      CADDY_EMAIL: ${CADDY_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - livelegalai
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Inlined into the client bundle at build time — must match DOMAIN.
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env.local
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      - livelegalai
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    expose:
+      - "5000"
+    depends_on:
+      - rag_service
+    networks:
+      - livelegalai
+
+  rag_service:
+    build:
+      context: ./rag_service
+    restart: unless-stopped
+    env_file:
+      - ./rag_service/.env
+    expose:
+      - "8000"
+    volumes:
+      - rag_faiss_indexes:/app/faiss_indexes
+      - rag_uploaded_files:/app/uploaded_files
+    networks:
+      - livelegalai
+
+networks:
+  livelegalai:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  rag_faiss_indexes:
+  rag_uploaded_files:

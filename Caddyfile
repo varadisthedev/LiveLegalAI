@@ -1,0 +1,23 @@
+{
+	email {$CADDY_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	# Backend API, Swagger docs, and health check
+	handle /api/* {
+		reverse_proxy backend:5000
+	}
+	handle /docs* {
+		reverse_proxy backend:5000
+	}
+	handle /health {
+		reverse_proxy backend:5000
+	}
+
+	# Everything else goes to the Next.js frontend
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
