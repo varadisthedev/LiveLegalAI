@@ -195,3 +195,6 @@ frontend/node_modules/
 # IDE
 .vscode/
 .idea/
+
+# Claude Code — personal overrides, not shared with the team
+.claude/settings.local.json
