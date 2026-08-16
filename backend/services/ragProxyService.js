@@ -1,7 +1,7 @@
 const FormData = require('form-data');
 const fs = require('fs');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-const Document = require('../models/Document');
+const { findDocumentByDocumentId } = require('../repositories/documentRepository');
 const logger = require('../utils/logger');
 
 const RAW_URL = process.env.RAG_SERVICE_URL;
@@ -22,7 +22,7 @@ const ensureDocumentIndexed = async (documentId) => {
     
     if (checkResponse.status === 404) {
       logger.info(`Document ${documentId} is missing from RAG registry. Triggering auto-reindexing...`);
-      const docMongo = await Document.findOne({ documentId });
+      const docMongo = await findDocumentByDocumentId(documentId);
       if (!docMongo) {
         throw new Error(`Document ${documentId} not found in MongoDB.`);
       }

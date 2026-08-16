@@ -13,11 +13,11 @@
   ],
   "components": {
     "securitySchemes": {
-      "UserIdHeader": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-user-id",
-        "description": "User identifier header (e.g. test_user_12345)"
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token returned by /api/auth/register, /api/auth/login, or /api/auth/google"
       }
     },
     "schemas": {
@@ -42,10 +42,95 @@
   },
   "security": [
     {
-      "UserIdHeader": []
+      "BearerAuth": []
     }
   ],
   "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register a new account",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Account created, returns { user, token }" },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Email already registered" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Log in with email and password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful, returns { user, token }" },
+          "401": { "description": "Invalid email or password" }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "summary": "Sign in or register via Google OAuth ID token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["idToken"],
+                "properties": {
+                  "idToken": { "type": "string", "description": "Google ID token from the OAuth consent flow" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Sign-in successful, returns { user, token }" },
+          "401": { "description": "Invalid Google credential" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Get the current authenticated user's profile",
+        "responses": {
+          "200": { "description": "Returns the current user" },
+          "401": { "description": "Missing or invalid token" }
+        }
+      }
+    },
     "/api/document/upload": {
       "post": {
         "summary": "Upload and Ingest Legal Document",

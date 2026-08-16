@@ -13,6 +13,7 @@ const swaggerDocument = require("./swagger.json");
 const documentRoutes = require("./routes/documentRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -30,12 +31,13 @@ app.use(morgan("combined"));
 app.use(globalLimiter);
 app.use(
   cors({
-    origin: "*",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "x-user-id", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 // API Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/document", documentRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/user", userRoutes);
