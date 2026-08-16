@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * LiveLegalAI brand theme — cream / espresso-brown, professional & editorial.
+ * Source palette: #291C0E, #6E473B, #A78D78, #BEB5A9, #E1D4C2
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-heading: var(--font-serif);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Risk-level semantics used by RiskIndicator / SummaryCard, tuned to sit
+     well against a warm cream background rather than the neon dark-theme
+     versions of these colors. */
+  --color-risk-low: var(--risk-low);
+  --color-risk-moderate: var(--risk-moderate);
+  --color-risk-high: var(--risk-high);
+  --color-risk-unknown: var(--risk-unknown);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  --background: #e1d4c2;
+  --foreground: #291c0e;
+  --card: #ede4d8;
+  --card-foreground: #291c0e;
+  --popover: #ede4d8;
+  --popover-foreground: #291c0e;
+  --primary: #6e473b;
+  --primary-foreground: #f5eee4;
+  --secondary: #a78d78;
+  --secondary-foreground: #291c0e;
+  --muted: #beb5a9;
+  --muted-foreground: #4a3b30;
+  --accent: #a78d78;
+  --accent-foreground: #291c0e;
+  --destructive: #b3432b;
+  --destructive-foreground: #f5eee4;
+  --border: #beb5a9;
+  --input: #beb5a9;
+  --ring: #6e473b;
+  --radius: 0.75rem;
+
+  --risk-low: #3f7d53;
+  --risk-moderate: #b8853a;
+  --risk-high: #b3432b;
+  --risk-unknown: #8a7b6c;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
