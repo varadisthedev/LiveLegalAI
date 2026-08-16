@@ -14,19 +14,9 @@ import sys
 
 
 def get_logger(name: str) -> logging.Logger:
-    """
-    Return a logger configured with a human-readable format.
-
-    Args:
-        name: Typically __name__ from the calling module.
-
-    Returns:
-        A Python standard-library Logger instance.
-    """
     logger = logging.getLogger(name)
 
-    # Prevent duplicate handlers when get_logger is called multiple times
-    if logger.handlers:
+    if logger.handlers: # singleton design pattern here
         return logger
 
     logger.setLevel(logging.DEBUG)
@@ -44,6 +34,4 @@ def get_logger(name: str) -> logging.Logger:
 
     return logger
 
-
-# Module-level convenience logger (import this directly when needed)
-logger = get_logger("rag_service")
+logger = get_logger("rag_service") # exporting logger to use anywhere nows
