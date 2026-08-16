@@ -1,23 +1,6 @@
-"""
-main.py
--------
-FastAPI application entry point.
-
-This file wires together:
-  - The FastAPI app instance
-  - CORS middleware (so the Express.js backend can call this service)
-  - The API router from api/routes.py
-  - Startup / shutdown event handlers
-  - Uvicorn runner (for `python main.py` invocation)
-
-KEEP THIS FILE THIN.
-All business logic lives in core/ and api/routes.py.
-"""
-
 import os
 import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import router
 from config import APP_TITLE, APP_VERSION, APP_DESCRIPTION, FAISS_INDEX_DIR, UPLOAD_DIR
@@ -31,12 +14,6 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 def create_app() -> FastAPI:
-    """
-    Create and configure the FastAPI application.
-
-    Using a factory function makes it easy to spin up the app in tests
-    with different configurations.
-    """
     app = FastAPI(
         title=APP_TITLE,
         version=APP_VERSION,
@@ -45,25 +22,17 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",      # ReDoc UI at http://localhost:8000/redoc
     )
 
-    # -----------------------------------------------------------------------
-    # CORS — allow the Express.js backend (and local dev frontends) to call us
-    # -----------------------------------------------------------------------
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],          # Restrict to your Express.js domain in production
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
 
-    # -----------------------------------------------------------------------
-    # Mount the API router (all routes live in api/routes.py)
-    # -----------------------------------------------------------------------
+    # first check if master backend is defined
+    master_backend_url = os.environ.get("MASTER_BACKEND_URL")
+    if not master_backend_url:
+        raise RuntimeError("MASTER_BACKEND_URL is not configured")
+    
+    # checking health of master backend 
+
+    # no need for cors. as we are using this microservice for server <-> server communication
     app.include_router(router)
 
-    # -----------------------------------------------------------------------
-    # Startup events — ensure required directories exist
-    # -----------------------------------------------------------------------
     @app.on_event("startup")
     async def on_startup():
         os.makedirs(FAISS_INDEX_DIR, exist_ok=True)
@@ -80,24 +49,18 @@ def create_app() -> FastAPI:
     return app
 
 
-# ---------------------------------------------------------------------------
-# Application instance (used by uvicorn when launched as a module)
-# ---------------------------------------------------------------------------
 app = create_app()
-
-
-# ---------------------------------------------------------------------------
-# Run directly with: python main.py
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    # Railway passes the assigned port in the PORT environment variable.
-    # We default to 8000 for local development.
     port = int(os.environ.get("PORT", "8000"))
-    
+    if(port==8000):
+       logger.info("PORT not set; using default port 8000")
+
+    # quick reload will be enabled in dev, not on production
+    is_dev = os.environ.get("ENVIRONMENT", "development").lower() == "development"
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=False,         # Turn off reload for production stability
-        log_level="info",
+        reload=is_dev,        
     )
