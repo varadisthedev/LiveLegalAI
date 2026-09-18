@@ -3,15 +3,15 @@
 LiveLegalAI is a small multi-service project for document-grounded legal analysis. It consists of:
 
 - `frontend/` — Next.js (App Router, TypeScript) UI for upload, history, analysis, chat, and settings. Auth via NextAuth (credentials + Google OAuth), Tailwind CSS + shadcn/ui, feature-based folder structure.
-- `backend/` — Node/Express API with its own JWT auth (bcrypt-hashed passwords + Google ID token verification), that stores metadata, proxies to the RAG service, and handles uploads and reports.
-- `rag_service/` — Python FastAPI service that ingests documents, creates per-document FAISS indexes, and runs retrieval + generation. Only PDF and DOCX are parsed.
+- `backend/api_express/` — Node/Express API with its own JWT auth (bcrypt-hashed passwords + Google ID token verification), that stores metadata, proxies to the RAG service, and handles uploads and reports.
+- `backend/rag-api_python/` — Python FastAPI service that ingests documents, creates per-document FAISS indexes, and runs retrieval + generation. Only PDF and DOCX are parsed.
 
 Quick start (development), in three separate terminals:
 
 1. RAG service (Python):
 
 ```bash
-cd rag_service
+cd backend/rag-api_python
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -22,7 +22,7 @@ python main.py
 2. Backend (Node):
 
 ```bash
-cd backend
+cd backend/api_express
 npm install
 copy .env.example .env   # fill in JWT_SECRET, GOOGLE_CLIENT_ID, MONGODB_URI, etc.
 npm run dev
@@ -45,11 +45,13 @@ Key notes:
 
 Where to look:
 - Frontend routes: `frontend/src/app/`; feature code: `frontend/src/features/`
-- Backend controllers: `backend/controllers/`; auth: `backend/controllers/authController.js`, `backend/middleware/authMiddleware.js`
-- RAG core pipeline: `rag_service/core/`
+- Backend controllers: `backend/api_express/controllers/`; auth: `backend/api_express/controllers/authController.js`, `backend/api_express/middleware/authMiddleware.js`
+- RAG core pipeline: `backend/rag-api_python/core/`
 
 
 ## For deployment using a VPS:
 1. git clone the repo, then edit root .env (real domain + email) and each service's .env 
 2. Point the domain's DNS A record at the VPS IP.
 3. docker compose up -d --build
+
+For a backend-only Docker environment, run `docker compose up -d --build` from `backend/`. That starts Express and the RAG service without the frontend or Caddy.

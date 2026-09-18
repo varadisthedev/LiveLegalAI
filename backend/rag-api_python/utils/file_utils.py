@@ -11,6 +11,7 @@ Responsibilities:
 """
 
 import os
+import re
 import uuid
 import shutil
 from fastapi import UploadFile
@@ -21,6 +22,27 @@ logger = get_logger(__name__)
 
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# document_id is used verbatim to build filesystem paths (here, and in
+# core/vector_store.py for FAISS index files). Must match
+# models.request_models.DOCUMENT_ID_REGEX.
+DOCUMENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def validate_document_id(document_id: str) -> None:
+    """
+    Raise if document_id isn't safe to use as a filesystem path component.
+
+    Blocks path traversal ('..', '/', '\\') and anything outside a
+    conservative safe charset. /analyze and /chat get this for free from
+    the Pydantic pattern on AnalyzeRequest/ChatRequest; /ingest accepts an
+    optional client-supplied document_id as a plain form field, so it needs
+    this check explicitly.
+    """
+    if not isinstance(document_id, str) or not DOCUMENT_ID_PATTERN.match(document_id):
+        raise ValueError(
+            "document_id must match ^[A-Za-z0-9_-]{1,64}$ (letters, digits, '_', '-' only)."
+        )
 
 
 def generate_document_id() -> str:

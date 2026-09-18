@@ -5,3 +5,4 @@ npm-debug.log*
 !.env.example
 .git
 *.md
+../rag-api_python/

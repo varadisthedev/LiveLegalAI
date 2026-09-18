@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./api_express
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./api_express/.env
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    depends_on:
+      rag_service:
+        condition: service_healthy
+    networks:
+      - backend
+
+  rag_service:
+    build:
+      context: ./rag-api_python
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./rag-api_python/.env
+    ports:
+      - "${RAG_PORT:-8000}:8000"
+    volumes:
+      - rag_faiss_indexes:/app/faiss_indexes
+      - rag_uploaded_files:/app/uploaded_files
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  rag_faiss_indexes:
+  rag_uploaded_files:

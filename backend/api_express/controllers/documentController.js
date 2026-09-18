@@ -47,10 +47,14 @@ const downloadReport = async (req, res, next) => {
     const doc = await documentService.getReportDocument(req.userId, req.params.id);
 
     const pdf = new PDFDocument({ size: "A4", margin: 50 });
+    // originalName is the client-supplied upload filename — strip quotes/control
+    // characters before it goes into a header value so it can't break out of the
+    // quoted filename parameter or smuggle in extra Content-Disposition parameters.
+    const safeFilename = (doc.originalName || "analysis").replace(/["\r\n]/g, "");
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${doc.originalName || "analysis"}.pdf"`,
+      `attachment; filename="${safeFilename}.pdf"`,
     );
 
     pdf

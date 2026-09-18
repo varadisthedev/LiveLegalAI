@@ -13,8 +13,10 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - livelegalai
 
@@ -30,29 +32,31 @@ services:
     expose:
       - "3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - livelegalai
 
   backend:
     build:
-      context: ./backend
+      context: ./backend/api_express
     restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - ./backend/api_express/.env
     expose:
       - "5000"
     depends_on:
-      - rag_service
+      rag_service:
+        condition: service_healthy
     networks:
       - livelegalai
 
   rag_service:
     build:
-      context: ./rag_service
+      context: ./backend/rag-api_python
     restart: unless-stopped
     env_file:
-      - ./rag_service/.env
+      - ./backend/rag-api_python/.env
     expose:
       - "8000"
     volumes:

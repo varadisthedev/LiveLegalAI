@@ -1,17 +1,4 @@
 """
-api/routes.py
--------------
-FastAPI route handlers for all three endpoints.
-
-Each route handler:
-  1. Validates the incoming request (FastAPI does this automatically via Pydantic)
-  2. Calls the appropriate pipeline function
-  3. Returns the structured response
-  4. Handles errors with clear HTTP status codes and messages
-
-The route handlers are intentionally thin — all business logic lives in core/.
-This makes it easy to test the core logic independently of HTTP concerns.
-
 ENDPOINTS
 ---------
   POST /ingest   — Upload and process a document
@@ -19,6 +6,8 @@ ENDPOINTS
   POST /chat     — Ask a question about a document
 """
 
+import os
+import time
 import traceback
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
@@ -26,14 +15,22 @@ from fastapi.responses import JSONResponse
 from core.rag_pipeline import run_ingest_pipeline, run_analyze_pipeline, run_chat_pipeline
 from models.request_models import AnalyzeRequest, ChatRequest
 from models.response_models import IngestResponse, AnalyzeResponse, ChatResponse, ErrorResponse
-from utils.file_utils import generate_document_id, validate_file_extension, save_upload_file, delete_file
+from utils.file_utils import generate_document_id, validate_file_extension, validate_document_id, save_upload_file, delete_file
+from config import (
+    APP_VERSION,
+    FAISS_INDEX_DIR,
+    UPLOAD_DIR,
+    ANTHROPIC_API_KEY,
+    OPENAI_API_KEY,
+    GEMINI_API_KEY,
+    USE_OPENAI_EMBEDDINGS,
+)
 from logger import get_logger
 
+_START_TIME = time.time()
+
 logger = get_logger(__name__)
-
-# Create a router — this is mounted in main.py
 router = APIRouter()
-
 
 # ===========================================================================
 # POST /ingest
@@ -77,8 +74,19 @@ async def ingest_document(
         logger.warning(f"File validation failed: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-    # --- Generate ID and save file ---
-    if not document_id or not document_id.strip():
+    # --- Generate or validate the document ID ---
+    # A client-supplied document_id is forwarded straight into filesystem
+    # paths (save_upload_file, vector_store's FAISS files), so it must be
+    # constrained to a safe charset before use — otherwise a value like
+    # "../../etc/whatever" would escape UPLOAD_DIR/FAISS_INDEX_DIR.
+    if document_id and document_id.strip():
+        document_id = document_id.strip()
+        try:
+            validate_document_id(document_id)
+        except ValueError as e:
+            logger.warning(f"Rejected invalid document_id from client: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+    else:
         document_id = generate_document_id()
     saved_path = None
 
@@ -199,17 +207,78 @@ async def chat_with_document(request: ChatRequest):
 
 
 # ===========================================================================
-# GET /health  (bonus — useful for Express.js to ping the service)
+# GET /health  —  liveness + dependency check, used by Docker/Express/Caddy
 # ===========================================================================
+
+def _check_dir_writable(path: str) -> str:
+    """Best-effort check that a storage directory exists and is writable."""
+    try:
+        os.makedirs(path, exist_ok=True)
+        probe = os.path.join(path, ".health_check_tmp")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+        return "ok"
+    except Exception as e:
+        return f"error: {e}"
+
 
 @router.get(
     "/health",
     summary="Health check",
+    description=(
+        "Reports service liveness plus the health of everything /ingest, /analyze, "
+        "and /chat actually depend on: writable storage and at least one configured "
+        "LLM provider. Returns HTTP 503 (instead of 200) when a hard dependency is "
+        "down, so container orchestrators and load balancers can detect and act on it."
+    ),
     tags=["System"],
 )
 async def health_check():
-    """Simple health check endpoint for the Express.js backend to monitor."""
-    return {"status": "ok", "service": "rag_service"}
+    from core.document_registry import get_all_documents
+
+    checks = {}
+    healthy = True
+
+    # --- Storage: /ingest, /analyze, /chat all read/write here ---
+    for name, path in (("faiss_index_dir", FAISS_INDEX_DIR), ("upload_dir", UPLOAD_DIR)):
+        result = _check_dir_writable(path)
+        checks[name] = result
+        if result != "ok":
+            healthy = False
+
+    # --- LLM providers: call_llm() needs at least one configured to ever succeed ---
+    providers = {
+        "claude": bool(ANTHROPIC_API_KEY),
+        "openai": bool(OPENAI_API_KEY),
+        "gemini": bool(GEMINI_API_KEY),
+    }
+    checks["llm_providers"] = providers
+    if not any(providers.values()):
+        checks["llm_providers_error"] = "No LLM provider is configured — /analyze and /chat will always fail."
+        healthy = False
+
+    # --- Embeddings config consistency ---
+    if USE_OPENAI_EMBEDDINGS and not OPENAI_API_KEY:
+        checks["embedding_backend"] = "error: USE_OPENAI_EMBEDDINGS=true but OPENAI_API_KEY is missing"
+        healthy = False
+    else:
+        checks["embedding_backend"] = "openai" if USE_OPENAI_EMBEDDINGS else "sentence-transformers (local)"
+
+    # --- Cheap informational stats (registry is an in-memory dict, no I/O cost) ---
+    try:
+        checks["documents_indexed"] = len(get_all_documents())
+    except Exception as e:
+        checks["documents_indexed"] = f"error: {e}"
+
+    body = {
+        "status": "healthy" if healthy else "unhealthy",
+        "service": "rag_service",
+        "version": APP_VERSION,
+        "uptime_seconds": round(time.time() - _START_TIME, 1),
+        "checks": checks,
+    }
+    return JSONResponse(status_code=200 if healthy else 503, content=body)
 
 
 # ===========================================================================

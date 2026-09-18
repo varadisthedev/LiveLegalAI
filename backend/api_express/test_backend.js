@@ -1,10 +1,10 @@
-const axios = require('axios');
-const fs = require('fs');
-const FormData = require('form-data');
-const path = require('path');
+const axios = require("axios");
+const fs = require("fs");
+const FormData = require("form-data");
+const path = require("path");
 
-const BASE_URL = 'http://localhost:5000/api';
-const mockUserId = 'test_user_' + Date.now();
+const BASE_URL = "http://localhost:5000/api";
+const mockUserId = "test_user_" + Date.now();
 
 async function testBackend() {
   console.log(`\n================================`);
@@ -13,7 +13,10 @@ async function testBackend() {
   console.log(`Mock User ID: ${mockUserId}`);
 
   // Test setup: we use the test document from the RAG folder
-  const testDocPath = path.join(__dirname, '../rag_service/test_copyright_notice.pdf');
+  const testDocPath = path.join(
+    __dirname,
+    "../rag-api_python/test_copyright_notice.pdf",
+  );
   if (!fs.existsSync(testDocPath)) {
     console.error(`❌ Test document not found at: ${testDocPath}`);
     console.log(`Please generate the test document first.`);
@@ -26,14 +29,14 @@ async function testBackend() {
   console.log(`\n[1/4] Testing POST /document/upload...`);
   try {
     const form = new FormData();
-    form.append('document', fs.createReadStream(testDocPath));
-    form.append('userId', mockUserId);
+    form.append("document", fs.createReadStream(testDocPath));
+    form.append("userId", mockUserId);
 
     const response = await axios.post(`${BASE_URL}/document/upload`, form, {
-      headers: { 
+      headers: {
         ...form.getHeaders(),
-        'x-user-id': mockUserId
-      }
+        "x-user-id": mockUserId,
+      },
     });
 
     if (response.data.success) {
@@ -46,19 +49,26 @@ async function testBackend() {
       return;
     }
   } catch (error) {
-    console.error(`❌ Upload request failed:`, error.response?.data || error.message);
+    console.error(
+      `❌ Upload request failed:`,
+      error.response?.data || error.message,
+    );
     return;
   }
 
   // 2. Analyze Document
   console.log(`\n[2/4] Testing POST /chat/analyze...`);
   try {
-    const response = await axios.post(`${BASE_URL}/chat/analyze`, {
-      userId: mockUserId,
-      document_id: documentId
-    }, {
-      headers: { 'x-user-id': mockUserId }
-    });
+    const response = await axios.post(
+      `${BASE_URL}/chat/analyze`,
+      {
+        userId: mockUserId,
+        document_id: documentId,
+      },
+      {
+        headers: { "x-user-id": mockUserId },
+      },
+    );
 
     if (response.data.success) {
       const data = response.data.data;
@@ -69,19 +79,26 @@ async function testBackend() {
       console.error(`❌ Analyze failed:`, response.data);
     }
   } catch (error) {
-    console.error(`❌ Analyze request failed:`, error.response?.data || error.message);
+    console.error(
+      `❌ Analyze request failed:`,
+      error.response?.data || error.message,
+    );
   }
 
   // 3. Ask Custom Question
   console.log(`\n[3/4] Testing POST /chat/chat...`);
   try {
-    const response = await axios.post(`${BASE_URL}/chat/chat`, {
-      userId: mockUserId,
-      document_id: documentId,
-      question: "Give me bullet points on what I should do.",
-    }, {
-      headers: { 'x-user-id': mockUserId }
-    });
+    const response = await axios.post(
+      `${BASE_URL}/chat/chat`,
+      {
+        userId: mockUserId,
+        document_id: documentId,
+        question: "Give me bullet points on what I should do.",
+      },
+      {
+        headers: { "x-user-id": mockUserId },
+      },
+    );
 
     if (response.data.success) {
       const data = response.data.data;
@@ -92,27 +109,37 @@ async function testBackend() {
       console.error(`❌ Chat failed:`, response.data);
     }
   } catch (error) {
-    console.error(`❌ Chat request failed:`, error.response?.data || error.message);
+    console.error(
+      `❌ Chat request failed:`,
+      error.response?.data || error.message,
+    );
   }
 
   // 4. Check Chat History API
   console.log(`\n[4/4] Testing GET /chat/history...`);
   try {
     const response = await axios.get(`${BASE_URL}/chat/history`, {
-      headers: { 'x-user-id': mockUserId }
+      headers: { "x-user-id": mockUserId },
     });
 
     if (response.data.success) {
       const history = response.data.data;
-      console.log(`✅ History fetched successfully! Found ${history.length} records.`);
+      console.log(
+        `✅ History fetched successfully! Found ${history.length} records.`,
+      );
       history.forEach((h, i) => {
-        console.log(`  [${i+1}] ${h.responseType} - Q: ${h.question.substring(0, 50)}...`);
+        console.log(
+          `  [${i + 1}] ${h.responseType} - Q: ${h.question.substring(0, 50)}...`,
+        );
       });
     } else {
       console.error(`❌ History failed:`, response.data);
     }
   } catch (error) {
-    console.error(`❌ History request failed:`, error.response?.data || error.message);
+    console.error(
+      `❌ History request failed:`,
+      error.response?.data || error.message,
+    );
   }
 
   console.log(`\n================================`);

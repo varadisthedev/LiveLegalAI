@@ -44,7 +44,7 @@ Built for hackathon speed — **explicit, modular, and extremely easy to debug**
 ### 2. Set up a virtual environment
 
 ```bash
-cd rag_service
+cd backend/rag-api_python
 
 # Windows
 python -m venv venv

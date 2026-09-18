@@ -9,6 +9,12 @@ the API later without touching business logic.
 
 from pydantic import BaseModel, Field
 
+# document_id is used directly to build FAISS index file paths
+# (core/vector_store.py) and upload file paths (utils/file_utils.py), so it
+# is constrained to a safe, path-traversal-free charset at the API boundary.
+# Must match utils.file_utils.DOCUMENT_ID_PATTERN.
+DOCUMENT_ID_REGEX = r"^[A-Za-z0-9_-]{1,64}$"
+
 
 # ---------------------------------------------------------------------------
 # POST /analyze
@@ -16,6 +22,7 @@ from pydantic import BaseModel, Field
 class AnalyzeRequest(BaseModel):
     document_id: str = Field(
         ...,
+        pattern=DOCUMENT_ID_REGEX,
         description="The document_id returned by the /ingest endpoint.",
         example="doc_abc123",
     )
@@ -31,6 +38,7 @@ class AnalyzeRequest(BaseModel):
 class ChatRequest(BaseModel):
     document_id: str = Field(
         ...,
+        pattern=DOCUMENT_ID_REGEX,
         description="The document_id returned by the /ingest endpoint.",
         example="doc_abc123",
     )

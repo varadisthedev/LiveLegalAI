@@ -35,6 +35,7 @@ import numpy as np
 import faiss
 from typing import List, Tuple
 from config import FAISS_INDEX_DIR
+from utils.file_utils import validate_document_id
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -45,11 +46,13 @@ os.makedirs(FAISS_INDEX_DIR, exist_ok=True)
 
 def _index_path(document_id: str) -> str:
     """Return the file path for the FAISS .index binary file."""
+    validate_document_id(document_id)
     return os.path.join(FAISS_INDEX_DIR, f"{document_id}.index")
 
 
 def _chunks_path(document_id: str) -> str:
     """Return the file path for the JSON chunk metadata file."""
+    validate_document_id(document_id)
     return os.path.join(FAISS_INDEX_DIR, f"{document_id}_chunks.json")
 
 
